@@ -1,10 +1,10 @@
 # HTN hack; Noor Nasri, James Xu, Anish Aagarwal
 
-################ Importing modules #########################
 import functools
 import glob
 import json
 import os
+################ Importing modules #########################
 import pickle
 import socket
 import time
@@ -17,13 +17,19 @@ pygame.font.init()
 
 ################ Public Classes #########################
 # Deck class to allow for deck editing
+# Deck class to allow for deck editing
 class Deck:
     def __init__(self, deckname, deckl):
         self.deck_list = deckl
         self.dname = deckname
 
+<<<<<<< HEAD
     def add_card(self, cardname, card_DataB):
         self.deck_list.append(Card(cardname, card_DataB))
+=======
+    def add_card(self, card):
+        self.deck_list.append(card)
+>>>>>>> 143908612473788531ccc504eb457c7f52871d7b
 
     def remove_card(self, card_name):
         found = False
@@ -33,13 +39,21 @@ class Deck:
                 break
         if found:
             del self.deck_list[card]
+<<<<<<< HEAD
 
+=======
+            return True
+        return False
+>>>>>>> 143908612473788531ccc504eb457c7f52871d7b
 
     def save(self, user):
         user.curDecks[self.dname] = self.deck_list
 
-    def delete(self):
-        pass
+    def delete(self, user):
+        if self.dname in user.curDecks:
+            del user.curDecks[self.dname]
+            return True
+        return False
 
 
 # User class for keeping track of profile things
@@ -57,16 +71,12 @@ class User:
         items = requests.post(base_url + req, data=json.dumps(payloads), headers={'content-type': 'application/json'})
         ret_item = items.json()
         if ret_item["status"] == 200:
+            self.token = ret_item["token"]
+            self.name = username
+            self.get_data()
             global current_screen
-            if req == "create_user":
-                print("Account created")
-                self.make_user(username,password,"sign_in")
-            else:
-                self.name = username
-                self.token = ret_item["token"]
-                self.get_data()
-                current_screen = "Deck Building"
-                print("Account log in") 
+            current_screen = "Main Menu"
+            print("Account success")
             return True
         return False
 
@@ -122,6 +132,7 @@ class Card:
         
 
     def downloadIm(self):
+<<<<<<< HEAD
             if(self.img==None):
                 image_url = self.imgUrl
                 img_data = requests.get(image_url).content
@@ -129,13 +140,25 @@ class Card:
                     handler.write(img_data)
                 self.img = pygame.image.load("Card Images/" + self.cname + ".jpg")
                 print(self.img)
+=======
+        if (not os.path.exists("Card Images/" + self.cname + ".jpg")):
+            image_url = self.imgUrl
+            img_data = requests.get(image_url).content
+            with open("Card Images/" + self.cname + '.jpg', 'wb') as handler:
+                handler.write(img_data)
+            self.img = pygame.image.load("Card Images/" + self.cname + ".jpg", "wb")
+>>>>>>> 143908612473788531ccc504eb457c7f52871d7b
 
     def __hash__(self):
         return hash(self.cname) ^ hash(self.text) ^ hash(self.imgUrl)
 
 
 ################ Public functions #########################
+<<<<<<< HEAD
 def transparent_rect(x, y, b, h, alpha,colour = (0,0,0)):
+=======
+def transparent_rect(x, y, b, h, alpha):
+>>>>>>> 143908612473788531ccc504eb457c7f52871d7b
     transparent_screen = pygame.Surface((b, h))
     transparent_screen.fill(colour)
     transparent_screen.set_alpha(alpha)
@@ -158,7 +181,7 @@ def text_with_outline(text, myfont, col_main, col_outline, x, y, outline_width, 
 
 
 @functools.lru_cache(maxsize=None)
-def font_size(font, text, max_width, max_height, size):  # Recurssion with memoization
+def font_size(font, text, max_width, max_height, size):  # Recursion with memoization
     myfont = pygame.font.SysFont(font, size)
     x, y = pygame.font.Font.size(myfont, text)
     if x < max_width and y < max_height or size < 4:
@@ -191,12 +214,15 @@ def get_cards():
     print('GETTING')
     items = requests.get(base_url + "get_cards")
     ret_item = items.json()
-    print("Request returned")
     return ret_item["data"]
 
 
+<<<<<<< HEAD
     
+=======
+>>>>>>> 143908612473788531ccc504eb457c7f52871d7b
 ################ Game Variables #########################
+
 base_url = "https://mtg.jamesxu.ca/"
 existingImages = glob.glob("Card Images/*")
 if 'CardList.p' in glob.glob('*.p'):
@@ -225,7 +251,7 @@ menu_specifications = {"Login Menu": {"Username": "Username", "Password": "Passw
                        }
 
 # Setting up pygame
-original_screen = [1000,625]
+original_screen = [800, 600]
 screen = pygame.display.set_mode(original_screen, pygame.RESIZABLE)
 
 pygame.display.set_caption("HTN Program")
@@ -336,9 +362,16 @@ while running:
     if cur_background == 47 or cur_background == 0:
         bck_direction *= -1
     if current_screen == "Login Menu":
+<<<<<<< HEAD
+=======
+        cur_background += bck_direction
+        if cur_background == 48 or cur_background == 0:
+            bck_direction *= -1
+
+>>>>>>> 143908612473788531ccc504eb457c7f52871d7b
         screen.blit(images_database["IntroGif%i" % (cur_background)], [int(e * size_ratio) for e in [0, 0]])
         for i in range(2):
-            im_name, im_pos = ["Sign Up", "Sign In"][i], [[800, 510], [800, 560]][i]
+            im_name, im_pos = ["Sign Up", "Sign In"][i], [[675, 462], [675, 537]][i]
             im_pos = [int(e * size_ratio) for e in im_pos]
             item = screen.blit(images_database[im_name], im_pos)
             if item.collidepoint(mx, my) and clicked:  # They signed up or in!
@@ -346,9 +379,9 @@ while running:
 
         # Username and password bars
         buttons = [
-            transparent_rect(int(375 * size_ratio), int(510 * size_ratio), int(250 * size_ratio), int(40 * size_ratio),
+            transparent_rect(int(275 * size_ratio), int(470 * size_ratio), int(250 * size_ratio), int(40 * size_ratio),
                              120),
-            transparent_rect(int(375 * size_ratio), int(575 * size_ratio), int(250 * size_ratio), int(40 * size_ratio),
+            transparent_rect(int(275 * size_ratio), int(545 * size_ratio), int(250 * size_ratio), int(40 * size_ratio),
                              120)]
 
         for a in range(2):
@@ -359,9 +392,9 @@ while running:
                 typing_reference = sc_params
 
         largest_size1, x_taken1, y_taken, myfont1 = font_size("timesnewroman", sc_params["Username"],
-                                                              int(250 * size_ratio), int(40 * size_ratio), 60)
+                                                              int(275 * size_ratio), int(40 * size_ratio), 60)
         largest_size2, x_taken2, y_taken, myfont2 = font_size("timesnewroman", sc_params["Password"],
-                                                              int(250 * size_ratio), int(40 * size_ratio), 60)
+                                                              int(275 * size_ratio), int(40 * size_ratio), 60)
 
         mysize = largest_size1 < largest_size2 and largest_size1 or largest_size2
         myfont = pygame.font.SysFont("timesnewroman", mysize)  # Make for both
@@ -369,9 +402,10 @@ while running:
         x_taken = pygame.font.Font.size(myfont, sc_params["Username"])[0]
         text_with_outline(
             sc_params["Username"] + (current_selection == "Username" and cur_background // 8 % 2 == 0 and '|' or ""),
-            myfont, (255, 255, 255), (0, 0, 0), int(500 * size_ratio) - x_taken // 2, int(512 * size_ratio), 1, False)
+            myfont, (255, 255, 255), (0, 0, 0), int(400 * size_ratio) - x_taken // 2, int(472 * size_ratio), 1, False)
 
         x_taken = pygame.font.Font.size(myfont, sc_params["Password"])[0]
+<<<<<<< HEAD
         text_with_outline(sc_params["Password"] + (current_selection == "Password" and cur_background // 8 % 2 == 0 and '|' or ""),
             myfont, (255, 255, 255), (0, 0, 0), int(500 * size_ratio) - x_taken // 2, int(577 * size_ratio), 1, False)
 
@@ -415,6 +449,11 @@ while running:
         
         
         
+=======
+        text_with_outline(
+            sc_params["Password"] + (current_selection == "Password" and cur_background // 8 % 2 == 0 and '|' or ""),
+            myfont, (255, 255, 255), (0, 0, 0), int(400 * size_ratio) - x_taken // 2, int(547 * size_ratio), 1, False)
+>>>>>>> 143908612473788531ccc504eb457c7f52871d7b
 
     pygame.display.flip()
     time.sleep(0.04)

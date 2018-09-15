@@ -25,9 +25,18 @@ class Deck:
     def add_card(self, cardname, card_DataB):
         self.deck_list.append(Card(cardname, card_DataB))
 
-    def remove_card(self):
-        pass
+    def remove_card(self, card_name):
+        found = False
+        for card in self.deck_list:
+            if card.cname == card_name:
+                found = True
+                break
+        if found:
+            del self.deck_list[card]
 
+
+    def save(self, user):
+        user.curDecks[self.dname] = self.deck_list
 
     def delete(self):
         pass
@@ -105,12 +114,30 @@ class Card:
         self.img = None
         if "imageUrl" in card_DataB[cardname]:
             self.imgUrl = card_DataB[cardname]["imageUrl"]
+        
+        if "CardImages//"+self.cname+".jpg" in existingImages:
+            self.img = pygame.image.load("Card Name/" +self.cname+".jpg")
+            print(self.img)
+        card_DataB[cardname] 
+        
 
     def downloadIm(self):
+            if(self.img==None):
+                image_url = self.imgUrl
+                img_data = requests.get(image_url).content
+                with open("Card Images/" + self.cname + '.jpg',"rb") as handler:
+                    handler.write(img_data)
+                self.img = pygame.image.load("Card Images/" + self.cname + ".jpg")
+                print(self.img)
+
+    def __hash__(self):
+        return hash(self.cname) ^ hash(self.text) ^ hash(self.imgUrl)
 
 
 ################ Public functions #########################
+def transparent_rect(x, y, b, h, alpha,colour = (0,0,0)):
     transparent_screen = pygame.Surface((b, h))
+    transparent_screen.fill(colour)
     transparent_screen.set_alpha(alpha)
     return screen.blit(transparent_screen, (x, y))
 
@@ -153,6 +180,13 @@ def del_deck(username, token, deck_name):
     return ret_item["status"] == 200
 
 
+def search_card(key_note):
+    list_good = []
+    for key in card_database:
+        if key_note.lower() in key.lower():
+            list_good.append(card_database[key])
+    return list_good
+
 def get_cards():
     print('GETTING')
     items = requests.get(base_url + "get_cards")
@@ -160,6 +194,8 @@ def get_cards():
     print("Request returned")
     return ret_item["data"]
 
+
+    
 ################ Game Variables #########################
 base_url = "https://mtg.jamesxu.ca/"
 existingImages = glob.glob("Card Images/*")
@@ -185,7 +221,7 @@ bck_direction = 1
 
 menu_specifications = {"Login Menu": {"Username": "Username", "Password": "Password"},
                        'Main Menu': {},
-                       'Deck Building': {}
+                       'Deck Building': {"Search":"Search", "Items":[], "Current_Scroll":0}
                        }
 
 # Setting up pygame
@@ -233,6 +269,8 @@ first = True
 
 while running:
     clicked = False
+    scrolled = 0
+    
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -244,13 +282,20 @@ while running:
                     typing_reference[current_selection] = typing_reference[current_selection][:-1]
 
             elif event.key == pygame.K_KP_ENTER or event.key == pygame.K_RETURN:  # Remove it
-                typing = False
-                typing_reference = None
-                current_selection = "Nil"
+                if current_selection == "Search":
+                    typing_reference["Items"] = search_card(typing_reference["Search"])
+                else:
+                    typing = False
+                    typing_reference = None
+                    current_selection = "Nil"
 
             elif event.key < 256:  # Add new char
                 typing_reference[current_selection] += event.unicode
-
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button==5: #They scrolled downwards
+            scrolled = 1
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button==4: #They scrolled upwards
+            scrolled = -1
+            
         elif event.type == pygame.VIDEORESIZE:
             print('resize')
             x, y = event.w, event.h
@@ -287,11 +332,10 @@ while running:
 
     sc_params = menu_specifications[current_screen]
     screen.fill((255, 255, 255))
+    cur_background += bck_direction
+    if cur_background == 47 or cur_background == 0:
+        bck_direction *= -1
     if current_screen == "Login Menu":
-        cur_background += bck_direction
-        if cur_background == 47 or cur_background == 0:
-            bck_direction *= -1
-
         screen.blit(images_database["IntroGif%i" % (cur_background)], [int(e * size_ratio) for e in [0, 0]])
         for i in range(2):
             im_name, im_pos = ["Sign Up", "Sign In"][i], [[800, 510], [800, 560]][i]
@@ -328,18 +372,47 @@ while running:
             myfont, (255, 255, 255), (0, 0, 0), int(500 * size_ratio) - x_taken // 2, int(512 * size_ratio), 1, False)
 
         x_taken = pygame.font.Font.size(myfont, sc_params["Password"])[0]
-        text_with_outline(
-            sc_params["Password"] + (current_selection == "Password" and cur_background // 8 % 2 == 0 and '|' or ""),
+        text_with_outline(sc_params["Password"] + (current_selection == "Password" and cur_background // 8 % 2 == 0 and '|' or ""),
             myfont, (255, 255, 255), (0, 0, 0), int(500 * size_ratio) - x_taken // 2, int(577 * size_ratio), 1, False)
 
     elif current_screen == "Deck Building":
         screen.blit(images_database["DeckBck"], (0,0))
-        transparent_rect(0, 0, int(200 * size_ratio), int(625 * size_ratio),60)
-        
+        side_bar = transparent_rect(0, 0, int(200 * size_ratio), int(625 * size_ratio),60)
+        search_bar = transparent_rect(int(25*size_ratio), int(20*size_ratio), int(150 * size_ratio), int(40 * size_ratio),100)
+
+        if search_bar.collidepoint((mx,my)):
+            if clicked:
+                current_selection = "Search"
+                sc_params["Search"] = ""
+                typing = True
+                typing_reference = sc_params
+        elif side_bar.collidepoint((mx,my)):
+            sc_params["Current_Scroll"] = min(max(sc_params["Current_Scroll"] + scrolled,0), len(sc_params["Items"]))
+            
+            
+        largest_size, x_taken, y_taken, myfont = font_size("timesnewroman", sc_params["Search"],
+                                                              int(150 * size_ratio), int(40 * size_ratio), 60)
+        text_with_outline(sc_params["Search"] + (current_selection == "Search" and cur_background // 8 % 2 == 0 and '|' or ""),
+            myfont, (255, 255, 255), (0, 0, 0), int(100 * size_ratio) - x_taken // 2, int(21 * size_ratio), 1, False)
+
+        #Font size for all 0-9 cards
+        largest_size, x_taken, y_taken, myfont = font_size("timesnewroman", sc_params["Search"],
+                                                              int(150 * size_ratio), int(40 * size_ratio), 60)
+        for a in range(sc_params["Current_Scroll"], sc_params["Current_Scroll"]+9):
+            if a >= len(sc_params["Items"]):
+                break
+            card_object = sc_params["Items"][a]
+            card_bar = transparent_rect(0, int((a- sc_params["Current_Scroll"]+1)*100*size_ratio), int(200 * size_ratio), int(100 * size_ratio),20)
+            if card_bar.collidepoint((mx,my)):
+                transparent_rect(0, int((a- sc_params["Current_Scroll"]+1)*100*size_ratio), int(200 * size_ratio), int(100 * size_ratio),50)
+                #Call card function
+            main_text = myfont.render(card_object.cname, True, (255,255,255))
+            screen.blit(main_text, (0, int((a- sc_params["Current_Scroll"]+1)*100*size_ratio)))
+            
         transparent_rect(int(350 * size_ratio), int(25 * size_ratio), int(350 * size_ratio), int(75 * size_ratio), 120)
         transparent_rect(int(250 * size_ratio), int(175 * size_ratio), int(550 * size_ratio), int(400 * size_ratio), 90)
-        
         transparent_rect(int(850 * size_ratio), int(150 * size_ratio), int(150 * size_ratio), int(300 * size_ratio), 90)
+        
         
         
 

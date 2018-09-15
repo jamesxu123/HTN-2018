@@ -9,6 +9,11 @@ import pickle
 import socket
 import time
 
+from Deck import *
+from GlobalVar import *
+from Card import *
+from User import *
+
 import pygame
 import requests
 
@@ -18,100 +23,6 @@ pygame.font.init()
 ################ Public Classes #########################
 # Deck class to allow for deck editing
 # Deck class to allow for deck editing
-class Deck:
-    def __init__(self, deckname, deckl):
-        self.deck_list = deckl
-        self.dname = deckname
-
-    def add_card(self, cardname, card_DataB):
-        self.deck_list.append(Card(cardname, card_DataB))
-
-    def remove_card(self):
-        pass
-
-    def save(self):
-        pass
-
-    def delete(self):
-        pass
-
-
-# User class for keeping track of profile things
-class User:
-    def __init__(self):
-        self.name = "None"
-        self.win = 0
-        self.loss = 0
-        self.curDecks = {}
-        self.token = None
-
-    def make_user(self, username, password, req):  # "sign_in" "create_user"
-        payloads = {'username': username, 'password': password}
-
-        items = requests.post(base_url + req, data=json.dumps(payloads), headers={'content-type': 'application/json'})
-        ret_item = items.json()
-        if ret_item["status"] == 200:
-            self.token = ret_item["token"]
-            self.name = username
-            self.get_data()
-            global current_screen
-            current_screen = "Main Menu"
-            print("Account success")
-            return True
-        return False
-
-    def get_data(self):  # Once you log in
-        payloads = {'username': self.name, 'token': self.token}
-        items = requests.post(base_url + "get_stats", data=json.dumps(payloads),
-                              headers={'content-type': 'application/json'})
-        ret_item = items.json()
-        if ret_item["status"] == 200:
-            stats = ret_item["data"]
-            self.win = stats["wins"]
-            self.loss = stats["losses"]
-
-        payloads = {'username': self.name, 'token': self.token}
-        items = requests.post(base_url + "get_decks", data=json.dumps(payloads),
-                              headers={'content-type': 'application/json'})
-        ret_item = items.json()
-        if ret_item["status"] == 200:
-            deck = ret_item["data"]
-            for deckname in deck:
-                self.curDecks[deckname] = Deck(deckname, deck[deckname])
-
-
-class Card:
-    def __init__(self, cardname, card_DataB):
-        self.cname = cardname
-        if "type" in card_DataB[cardname]:
-            self.type = card_DataB[cardname]["type"]
-        if "Creature" in self.type:
-            self.power = card_DataB[cardname]["power"]
-            self.toughness = card_DataB[cardname]["toughness"]
-            self.cmc = card_DataB[cardname]["cmc"]
-        if "colors" in card_DataB[cardname]:
-            self.colors = card_DataB[cardname]["colors"]
-        if "manaCost" in card_DataB[cardname]:
-            self.manaCost = card_DataB[cardname]["manaCost"]
-        if "text" in card_DataB[cardname]:
-            self.text = card_DataB[cardname]["text"]
-            self.alt = False
-        if card_DataB[cardname]["layout"] == "double-faced":
-            if card_DataB[cardname]["names"][0] == cardname:
-                self.alt = card_DataB[cardname]["names"][1]
-            else:
-                self.alt = card_DataB[cardname]["names"][0]
-        self.img = None
-        if "imageUrl" in card_DataB[cardname]:
-            self.imgUrl = card_DataB[cardname]["imageUrl"]
-
-    def downloadIm(self):
-        if (not os.path.exists("Card Images/" + self.cname + ".jpg")):
-            image_url = self.imgUrl
-            img_data = requests.get(image_url).content
-            with open("Card Images/" + self.cname + '.jpg', 'wb') as handler:
-                handler.write(img_data)
-            self.img = pygame.image.load("Card Images/" + self.cname + ".jpg", "wb")
 
 
 ################ Public functions #########################
@@ -136,7 +47,7 @@ def text_with_outline(text, myfont, col_main, col_outline, x, y, outline_width, 
     screen.blit(main_text, stuff[-1])
 
 
-@functools.lru_cache(maxsize=None)
+@functools.lru_cache(maxsize=256)
 def font_size(font, text, max_width, max_height, size):  # Recurssion with memoization
     myfont = pygame.font.SysFont(font, size)
     x, y = pygame.font.Font.size(myfont, text)
@@ -167,7 +78,6 @@ def get_cards():
 
 
 ################ Game Variables #########################
-base_url = "https://mtg.jamesxu.ca/"
 existingImages = glob.glob("Card Images/*")
 if 'CardList.p' in glob.glob('*.p'):
     card_database = pickle.load(open('CardList.p', 'rb'))
@@ -179,30 +89,6 @@ else:
 
 for card in card_database:
     card_database[card] = Card(card, card_database)
-
-current_screen = "Login Menu"
-current_selection = "Nil"
-typing = False
-typing_reference = None
-user_item = User()
-
-cur_background = 0
-bck_direction = 1
-
-menu_specifications = {"Login Menu": {"Username": "Username", "Password": "Password"},
-                       'Main Menu': {},
-                       'Deck Building': {}
-                       }
-
-# Setting up pygame
-original_screen = [800, 600]
-screen = pygame.display.set_mode(original_screen, pygame.RESIZABLE)
-
-pygame.display.set_caption("HTN Program")
-size_ratio = 1
-
-original_images = {}
-images_database = {}
 
 path_way = os.path.dirname(os.path.realpath(__file__))  # Directory to the python file
 for image in os.listdir(path_way + "/Images"):  # Loading images
@@ -218,6 +104,12 @@ host_ip = "localhost"
 port = 224
 # server.connect((host_ip, port))
 images_database = {}
+
+screen = pygame.display.set_mode(original_screen, pygame.RESIZABLE)
+
+pygame.display.set_caption("HTN Program")
+
+user_item = User()
 
 
 def setup():
@@ -287,7 +179,7 @@ while running:
         typing = False
         typing_reference = None
         current_selection = "Nil"
-
+    print(current_screen)
     cur = time.time()
     mx, my = pygame.mouse.get_pos()
 
@@ -337,6 +229,8 @@ while running:
         text_with_outline(
             sc_params["Password"] + (current_selection == "Password" and cur_background // 8 % 2 == 0 and '|' or ""),
             myfont, (255, 255, 255), (0, 0, 0), int(400 * size_ratio) - x_taken // 2, int(547 * size_ratio), 1, False)
+    elif current_screen == "Build Deck":
+        pass
 
     pygame.display.flip()
     time.sleep(0.04)

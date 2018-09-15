@@ -343,9 +343,13 @@ while running:
             myfont, (255, 255, 255), (0, 0, 0), int(500 * size_ratio) - x_taken // 2, int(577 * size_ratio), 1, False)
 
     elif current_screen == "Deck Building":
-        transparent_rect(0, 0, int(175 * size_ratio), int(600 * size_ratio),60)
-        transparent_rect(int(275 * size_ratio), int(25* size_ratio), int(350 * size_ratio), int(75 * size_ratio),120)
-        transparent_rect(int(275 * size_ratio), int(175* size_ratio), int(350 * size_ratio), int(300 * size_ratio),90)
+        screen.blit(images_database["DeckBck"], (0,0))
+        transparent_rect(0, 0, int(200 * size_ratio), int(625 * size_ratio),60)
+        
+        transparent_rect(int(350 * size_ratio), int(25 * size_ratio), int(350 * size_ratio), int(75 * size_ratio), 120)
+        transparent_rect(int(250 * size_ratio), int(175 * size_ratio), int(550 * size_ratio), int(400 * size_ratio), 90)
+        
+        transparent_rect(int(850 * size_ratio), int(150 * size_ratio), int(150 * size_ratio), int(300 * size_ratio), 90)
         
         
 

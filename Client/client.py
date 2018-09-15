@@ -78,10 +78,6 @@ class User:
             deck = ret_item["data"]
             for deckname in deck:
                 self.curDecks[deckname] = Deck(deckname, deck[deckname])
-<<<<<<< HEAD
-    
-=======
->>>>>>> 5d98ec16b7c3aaf00cfa2e1501b206dcbcf5193f
 
 
 class Card:
@@ -330,7 +326,6 @@ while running:
                                                               int(275 * size_ratio), int(40 * size_ratio), 60)
 
         mysize = largest_size1 < largest_size2 and largest_size1 or largest_size2
-<<<<<<< HEAD
         myfont = pygame.font.SysFont("timesnewroman", mysize) #Make for both
         
         x_taken = pygame.font.Font.size(myfont,sc_params["Username"])[0]
@@ -338,19 +333,7 @@ while running:
 
         x_taken = pygame.font.Font.size(myfont,sc_params["Password"])[0]
         text_with_outline(sc_params["Password"] + (current_selection=="Password" and cur_background//8%2==0 and '|' or ""),myfont,(255,255,255), (0,0,0), int(400*size_ratio)-x_taken//2, int(547*size_ratio), 1, False)
-=======
-        myfont = pygame.font.SysFont("timesnewroman", mysize)  # Make for both
 
-        x_taken = pygame.font.Font.size(myfont, sc_params["Username"])[0]
-        text_with_outline(
-            sc_params["Username"] + (current_selection == "Username" and cur_background // 8 % 2 == 0 and '|' or ""),
-            myfont, (255, 255, 255), (0, 0, 0), int(400 * size_ratio) - x_taken // 2, 472, 1, False)
-
-        x_taken = pygame.font.Font.size(myfont, sc_params["Password"])[0]
-        text_with_outline(
-            sc_params["Password"] + (current_selection == "Password" and cur_background // 8 % 2 == 0 and '|' or ""),
-            myfont, (255, 255, 255), (0, 0, 0), int(400 * size_ratio) - x_taken // 2, 547, 1, False)
->>>>>>> 5d98ec16b7c3aaf00cfa2e1501b206dcbcf5193f
 
     pygame.display.flip()
     time.sleep(0.04)

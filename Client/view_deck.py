@@ -3,31 +3,33 @@ import threading
 import pickle
 from client import Deck, Card
 
+def download_deck(deck):
+    for card in deck.deck_list:
+        has_img = card.img
+        if card.img is None:
+            threading.Thread(target=card.downloadIm).start()
 
 def draw_deck(area, deck):
     total = len(deck.deck_list)
     width = 120
-    for card in deck.deck_list:
-        has_img = card.img
-        if card.img is None:
-            card.downloadIm()
-        else:
-            card.img = card.img.convert()
-    x, y, w, h = area
 
+    threading.Thread(target=download_deck, args=(deck,)).start()
+
+    x, y, w, h = area
     row_length = w // (width + 12)
     num_rows = total // (row_length + 12)
     remaining = total - row_length * num_rows
-    sample_height = 120 / width * deck.deck_list[0].img.get_height()
-
-    surface = Surface((w, (sample_height + 7) * (num_rows + 1 + int(remaining > 0))))
+    surface = Surface((w, (190 + 12) * (num_rows + 1 + int(remaining > 0))))
 
     current_row = 0
     current_col = 0
 
     for card in deck.deck_list:
         img = card.img
+        if img is None:
+            continue
         scaled = transform.smoothscale(img, (120, 190))
+
         height = scaled.get_height()
         width = scaled.get_width()
 
@@ -48,11 +50,11 @@ def draw_deck(area, deck):
 
 
 if __name__ == '__main__':
+
     init()
     cards = pickle.load(open('CardList.p', 'rb'))
-    print(cards["Words of War"])
     deck = Deck("deck1", [])
-    for i in range(30):
+    for i in range(25):
         card = Card(list(cards.keys())[i], cards)
         deck.add_card(card)
 

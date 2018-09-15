@@ -11,7 +11,7 @@ import time
 
 import pygame
 import requests
-
+import io
 pygame.font.init()
 
 
@@ -116,19 +116,24 @@ class Card:
         if "imageUrl" in card_DataB[cardname]:
             self.imgUrl = card_DataB[cardname]["imageUrl"]
 
-        if "Card Images/" + self.cname + ".jpg" in existingImages:
-            self.img = pygame.image.load("Card Images/" + self.cname + ".jpg")
-            print(self.img)
+        # if "Card Images/" + self.cname + ".jpg" in existingImages:
+        #     self.img = pygame.image.load("Card Images/" + self.cname + ".jpg")
+        #     print(self.img)
         card_DataB[cardname]
 
     def downloadIm(self):
         if (self.img is None):
-            image_url = self.imgUrl
-            img_data = requests.get(image_url).content
-            with open("Card Images/" + self.cname + '.jpg', "wb") as handler:
-                handler.write(img_data)
-            self.img = pygame.image.load("Card Images/" + self.cname + ".jpg")
-            print(self.img)
+            try:
+                image_url = self.imgUrl
+                img_data = requests.get(image_url).content
+                # with open("Card Images/" + self.cname + '.jpg', "wb") as handler:
+                #     handler.write(img_data)
+                # self.img = pygame.image.load("Card Images/" + self.cname + ".jpg")
+                image = io.BytesIO(img_data)
+                self.img = pygame.image.load(image).convert()
+                # print(self.img)
+            except AttributeError:
+                pass
 
     def __hash__(self):
         return hash(self.cname) ^ hash(self.text) ^ hash(self.imgUrl)

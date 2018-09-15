@@ -151,6 +151,7 @@ def get_cards():
     cards = pickle.loads(open("CardList.p", "rb"))
     response = Response()
     response.set_data(json.dumps({"status": 500, "data": cards}))
+    return response
 
 
 @app.route('/sign_out', methods=["POST"])

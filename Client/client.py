@@ -90,6 +90,15 @@ class User:
             for deckname in deck:
                 self.curDecks[deckname] = Deck(deckname, deck[deckname])
 
+    def sign_out(self):
+        payloads = {"username": self.name, "token": self.token}
+        items = requests.post(base_url + "sign_out", data=json.dumps(payloads),
+                              headers={"content-type": "application/json"})
+        response = items.json()
+        if response["status"] == 200:
+            return True
+        return False
+
 
 class Card:
     def __init__(self, cardname, card_DataB):
@@ -136,7 +145,7 @@ class Card:
                 pass
 
     def __hash__(self):
-        return hash(self.cname) ^ hash(self.text) ^ hash(self.imgUrl)
+        return hash(self.cname)
 
 
 ################ Public functions #########################
@@ -378,4 +387,6 @@ if __name__ == '__main__':
 
         pygame.display.flip()
         time.sleep(0.04)
+
+    user_item.sign_out()
     pygame.quit()

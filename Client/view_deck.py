@@ -3,11 +3,13 @@ import threading
 import pickle
 from client import Deck, Card
 
+
 def download_deck(deck):
     for card in deck.deck_list:
         has_img = card.img
         if card.img is None:
             threading.Thread(target=card.downloadIm).start()
+
 
 def draw_deck(area, deck):
     total = len(deck.deck_list)
@@ -24,27 +26,38 @@ def draw_deck(area, deck):
     current_row = 0
     current_col = 0
 
+    collide_rects = {}
+
     for card in deck.deck_list:
         img = card.img
-        if img is None:
-            continue
-        scaled = transform.smoothscale(img, (120, 190))
+        if img is not None:
+            scaled = transform.smoothscale(img, (120, 190))
 
-        height = scaled.get_height()
-        width = scaled.get_width()
+            height = scaled.get_height()
+            width = scaled.get_width()
 
-        # if current_col == 0:
-        #     if current_row == 0:
-        #         surface.blit(scaled, (current_col, current_row))
-        #     else:
-        #         surface.blit(scaled, (current_col, current_row * height + 7))
-        # else:
-        surface.blit(scaled, (current_col * width + 12 * current_col, current_row * height + 12 * current_row))
+            # if current_col == 0:
+            #     if current_row == 0:
+            #         surface.blit(scaled, (current_col, current_row))
+            #     else:
+            #         surface.blit(scaled, (current_col, current_row * height + 7))
+            # else:
+            rect = surface.blit(scaled,
+                                (current_col * width + 12 * current_col, current_row * height + 12 * current_row))
+
+            collide_rects[card] = rect
 
         current_col += 1
         if current_col == row_length:
             current_col = 0
             current_row += 1
+
+    hover = None
+    mx, my = mouse.get_pos()
+    for card in collide_rects:
+        if collide_rects[card].collidepoint((mx, my)):
+            hover = card
+            draw.rect(surface, (255, 255, 255), collide_rects[card], 2)
 
     return surface
 
@@ -54,7 +67,7 @@ if __name__ == '__main__':
     init()
     cards = pickle.load(open('CardList.p', 'rb'))
     deck = Deck("deck1", [])
-    for i in range(25):
+    for i in range(60):
         card = Card(list(cards.keys())[i], cards)
         deck.add_card(card)
 

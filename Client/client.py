@@ -1,10 +1,10 @@
 # HTN hack; Noor Nasri, James Xu, Anish Aagarwal
 
+################ Importing modules #########################
 import functools
 import glob
 import json
 import os
-################ Importing modules #########################
 import pickle
 import socket
 import time
@@ -17,7 +17,6 @@ pygame.font.init()
 
 ################ Public Classes #########################
 # Deck class to allow for deck editing
-# Deck class to allow for deck editing
 class Deck:
     def __init__(self, deckname, deckl):
         self.deck_list = deckl
@@ -26,18 +25,9 @@ class Deck:
     def add_card(self, cardname, card_DataB):
         self.deck_list.append(Card(cardname, card_DataB))
 
-    def remove_card(self, card_name):
-        found = False
-        for card in self.deck_list:
-            if card.cname == card_name:
-                found = True
-                break
-        if found:
-            del self.deck_list[card]
+    def remove_card(self):
+        pass
 
-
-    def save(self, user):
-        user.curDecks[self.dname] = self.deck_list
 
     def delete(self):
         pass
@@ -58,12 +48,16 @@ class User:
         items = requests.post(base_url + req, data=json.dumps(payloads), headers={'content-type': 'application/json'})
         ret_item = items.json()
         if ret_item["status"] == 200:
-            self.token = ret_item["token"]
-            self.name = username
-            self.get_data()
             global current_screen
-            current_screen = "Main Menu"
-            print("Account success")
+            if req == "create_user":
+                print("Account created")
+                self.make_user(username,password,"sign_in")
+            else:
+                self.name = username
+                self.token = ret_item["token"]
+                self.get_data()
+                current_screen = "Deck Building"
+                print("Account log in") 
             return True
         return False
 
@@ -111,29 +105,20 @@ class Card:
         self.img = None
         if "imageUrl" in card_DataB[cardname]:
             self.imgUrl = card_DataB[cardname]["imageUrl"]
+<<<<<<< HEAD
         
         if "Card Images\\"+self.cname+".jpg" in existingImages:
             print("HHHHHHHHHHIIIIIII")
             self.img = pygame.image.load("Card Images/" +self.cname+".jpg")
         
+=======
+>>>>>>> d3b139a7231691be2c2ba772fc1352c418160a68
 
     def downloadIm(self):
-            if(self.img==None):
-                image_url = self.imgUrl
-                img_data = requests.get(image_url).content
-                with open("Card Images/" + self.cname + '.jpg',"rb") as handler:
-                    handler.write(img_data)
-                self.img = pygame.image.load("Card Images/" + self.cname + ".jpg")
-                print(self.img)
-
-    def __hash__(self):
-        return hash(self.cname) ^ hash(self.text) ^ hash(self.imgUrl)
 
 
 ################ Public functions #########################
-def transparent_rect(x, y, b, h, alpha,colour = (0,0,0)):
     transparent_screen = pygame.Surface((b, h))
-    transparent_screen.fill(colour)
     transparent_screen.set_alpha(alpha)
     return screen.blit(transparent_screen, (x, y))
 
@@ -180,8 +165,10 @@ def get_cards():
     print('GETTING')
     items = requests.get(base_url + "get_cards")
     ret_item = items.json()
+    print("Request returned")
     return ret_item["data"]
 
+<<<<<<< HEAD
 def infoGraph (cardname):
     currCard = card_database[cardname]
     print(currCard.img)
@@ -192,6 +179,8 @@ def infoGraph (cardname):
     screen.blit(currCard.img,(630,105))
     
     
+=======
+>>>>>>> d3b139a7231691be2c2ba772fc1352c418160a68
 ################ Game Variables #########################
 base_url = "https://mtg.jamesxu.ca/"
 existingImages = glob.glob("Card Images/*")
@@ -221,7 +210,7 @@ menu_specifications = {"Login Menu": {"Username": "Username", "Password": "Passw
                        }
 
 # Setting up pygame
-original_screen = [800, 600]
+original_screen = [1000,625]
 screen = pygame.display.set_mode(original_screen, pygame.RESIZABLE)
 
 pygame.display.set_caption("HTN Program")
@@ -321,12 +310,12 @@ while running:
     screen.fill((255, 255, 255))
     if current_screen == "Login Menu":
         cur_background += bck_direction
-        if cur_background == 48 or cur_background == 0:
+        if cur_background == 47 or cur_background == 0:
             bck_direction *= -1
 
         screen.blit(images_database["IntroGif%i" % (cur_background)], [int(e * size_ratio) for e in [0, 0]])
         for i in range(2):
-            im_name, im_pos = ["Sign Up", "Sign In"][i], [[675, 462], [675, 537]][i]
+            im_name, im_pos = ["Sign Up", "Sign In"][i], [[800, 510], [800, 560]][i]
             im_pos = [int(e * size_ratio) for e in im_pos]
             item = screen.blit(images_database[im_name], im_pos)
             if item.collidepoint(mx, my) and clicked:  # They signed up or in!
@@ -334,9 +323,9 @@ while running:
 
         # Username and password bars
         buttons = [
-            transparent_rect(int(275 * size_ratio), int(470 * size_ratio), int(250 * size_ratio), int(40 * size_ratio),
+            transparent_rect(int(375 * size_ratio), int(510 * size_ratio), int(250 * size_ratio), int(40 * size_ratio),
                              120),
-            transparent_rect(int(275 * size_ratio), int(545 * size_ratio), int(250 * size_ratio), int(40 * size_ratio),
+            transparent_rect(int(375 * size_ratio), int(575 * size_ratio), int(250 * size_ratio), int(40 * size_ratio),
                              120)]
 
         for a in range(2):
@@ -347,9 +336,9 @@ while running:
                 typing_reference = sc_params
 
         largest_size1, x_taken1, y_taken, myfont1 = font_size("timesnewroman", sc_params["Username"],
-                                                              int(275 * size_ratio), int(40 * size_ratio), 60)
+                                                              int(250 * size_ratio), int(40 * size_ratio), 60)
         largest_size2, x_taken2, y_taken, myfont2 = font_size("timesnewroman", sc_params["Password"],
-                                                              int(275 * size_ratio), int(40 * size_ratio), 60)
+                                                              int(250 * size_ratio), int(40 * size_ratio), 60)
 
         mysize = largest_size1 < largest_size2 and largest_size1 or largest_size2
         myfont = pygame.font.SysFont("timesnewroman", mysize)  # Make for both
@@ -357,12 +346,23 @@ while running:
         x_taken = pygame.font.Font.size(myfont, sc_params["Username"])[0]
         text_with_outline(
             sc_params["Username"] + (current_selection == "Username" and cur_background // 8 % 2 == 0 and '|' or ""),
-            myfont, (255, 255, 255), (0, 0, 0), int(400 * size_ratio) - x_taken // 2, int(472 * size_ratio), 1, False)
-        infoGraph("Adorable Kitten")
+            myfont, (255, 255, 255), (0, 0, 0), int(500 * size_ratio) - x_taken // 2, int(512 * size_ratio), 1, False)
+
         x_taken = pygame.font.Font.size(myfont, sc_params["Password"])[0]
         text_with_outline(
             sc_params["Password"] + (current_selection == "Password" and cur_background // 8 % 2 == 0 and '|' or ""),
-            myfont, (255, 255, 255), (0, 0, 0), int(400 * size_ratio) - x_taken // 2, int(547 * size_ratio), 1, False)
+            myfont, (255, 255, 255), (0, 0, 0), int(500 * size_ratio) - x_taken // 2, int(577 * size_ratio), 1, False)
+
+    elif current_screen == "Deck Building":
+        screen.blit(images_database["DeckBck"], (0,0))
+        transparent_rect(0, 0, int(200 * size_ratio), int(625 * size_ratio),60)
+        
+        transparent_rect(int(350 * size_ratio), int(25 * size_ratio), int(350 * size_ratio), int(75 * size_ratio), 120)
+        transparent_rect(int(250 * size_ratio), int(175 * size_ratio), int(550 * size_ratio), int(400 * size_ratio), 90)
+        
+        transparent_rect(int(850 * size_ratio), int(150 * size_ratio), int(150 * size_ratio), int(300 * size_ratio), 90)
+        
+        
 
     pygame.display.flip()
     time.sleep(0.04)

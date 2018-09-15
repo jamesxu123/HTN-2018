@@ -147,19 +147,20 @@ def font_size(font, text, max_width, max_height, size):  # Recurssion with memoi
 
 def set_deck(username, token, deck_name, deck_data):
     payload = {'username': username, 'token': token, 'deck_name': deck_name, 'deck_data': deck_data}
-    items = requests.post(base_url + "set_decks", data=json.dumps(payloads))
+    items = requests.post(base_url + "set_decks", data=json.dumps(payload))
     ret_item = json.loads(items)
     return ret_item["status"] == 200
 
 
 def del_deck(username, token, deck_name):
     payload = {'username': username, 'token': token, 'deck_name': deck_name}
-    items = requests.post(base_url + "del_deck", data=json.dumps(payloads))
+    items = requests.post(base_url + "del_deck", data=json.dumps(payload))
     ret_item = json.loads(items)
     return ret_item["status"] == 200
 
 
 def get_cards():
+    print('GETTING')
     items = requests.get(base_url + "get_cards")
     ret_item = items.json()
     return ret_item["data"]
@@ -168,7 +169,14 @@ def get_cards():
 ################ Game Variables #########################
 base_url = "https://mtg.jamesxu.ca/"
 existingImages = glob.glob("Card Images/*")
-card_database = get_cards()
+if 'CardList.p' in glob.glob('*.p'):
+    card_database = pickle.load(open('CardList.p', 'rb'))
+else:
+    file = open('CardList.p', 'wb')
+    card_database = get_cards()
+    pickle.dump(card_database, file)
+    file.close()
+
 for card in card_database:
     card_database[card] = Card(card, card_database)
 

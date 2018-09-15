@@ -34,13 +34,17 @@ class Deck:
                 break
         if found:
             del self.deck_list[card]
-
+            return True
+        return False
 
     def save(self, user):
         user.curDecks[self.dname] = self.deck_list
 
-    def delete(self):
-        pass
+    def delete(self, user):
+        if self.dname in user.curDecks:
+            del user.curDecks[self.dname]
+            return True
+        return False
 
 
 # User class for keeping track of profile things

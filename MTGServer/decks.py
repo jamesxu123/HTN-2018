@@ -7,7 +7,7 @@ class DeckHandler(auth.AuthObject):
     def retrieve_decks(self, username):
         if self.user_exists(username):
             cur = self.db.cursor()
-            cur.execute("SELECT deck FROM users WHERE username = '%s';" %username)
+            cur.execute("SELECT deck FROM users WHERE username = '%s';" % username)
             for row in cur.fetchall():
                 deck = row[0]
                 return deck
@@ -22,7 +22,7 @@ class DeckHandler(auth.AuthObject):
 
             decks[new_deck_name] = new_deck
 
-            cur.execute("UPDATE users SET deck = %s WHERE username = '%s';" %(json.dumps(new_deck), username))
+            cur.execute("UPDATE users SET deck = %s WHERE username = '%s';" % (json.dumps(new_deck), username))
 
             self.db.commit()
 
@@ -42,14 +42,10 @@ class DeckHandler(auth.AuthObject):
     def get_stats(self, username):
         cur = self.db.cursor()
 
-        cur.execute("SELECT wins, losses FROM users WHERE username = '%s';" %username)
+        cur.execute("SELECT wins, losses FROM users WHERE username = '%s';" % username)
 
         for row in cur.fetchall():
             wins = row[0]
             losses = row[0]
             return {"wins": wins, "losses": losses}
         return False
-
-
-
-

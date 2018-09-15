@@ -153,5 +153,28 @@ def get_cards():
     response.set_data(json.dumps({"status": 500, "data": cards}))
 
 
+@app.route('/sign_out', methods=["POST"])
+def sign_out():
+    success = False
+    if request.path == "/sign_in":
+        if request.method == "POST":
+
+            data = request.get_json()
+            status = auth_system.sign_out(data['username'])
+
+            if status:
+                success = True
+                respArray = {"status": 200}
+                response = Response()
+                response.set_data(json.dumps(respArray))
+                return response
+
+    if not success:
+        status = {"status": 500}
+        response = Response()
+        response.set_data(json.dumps(status))
+        return response
+
+
 if __name__ == '__main__':
     app.run()

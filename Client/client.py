@@ -184,7 +184,9 @@ menu_specifications = {"Login Menu": {"Username":"Username", "Password":"Passwor
 
 #Setting up pygame
 original_screen = [800,600]
-screen = pygame.display.set_mode(original_screen,pygame.RESIZABLE)
+screen = pygame.display.set_mode(original_screen, pygame.RESIZABLE)
+
+
 pygame.display.set_caption("HTN Program")
 size_ratio = 1
 
@@ -205,11 +207,21 @@ server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 host_ip = "localhost" 
 port = 224
 #server.connect((host_ip, port))
+images_database = {}
 
-
+def setup():
+    global images_database
+    for image in original_images:
+        im = original_images[image][:]
+        try:
+            images_database[image] = pygame.transform.smoothscale(im[0], (int(size_ratio * im[1]), int(size_ratio * im[2])))
+        except:
+            images_database[image] = pygame.transform.scale(im[0], (int(size_ratio * im[1]), int(size_ratio * im[2])))
+setup()
 ################ Game loop #########################
 running = True
 start = time.time()
+first = True
 
 while running:
     clicked = False
@@ -232,16 +244,17 @@ while running:
                 typing_reference[current_selection] += event.unicode
                 
         elif event.type == pygame.VIDEORESIZE:
+            print('resize')
             x,y = event.w,event.h
             requested_size = [x,y]
             ratio_wanted = original_screen[0]/original_screen[1]
             ratio_requested = requested_size[0]/requested_size[1]
-            
+
             if ratio_requested > ratio_wanted + 0.01:
                 requested_size[0] = int(requested_size[1]*ratio_wanted)
             elif ratio_requested < ratio_wanted - 0.01:
                 requested_size[1] = int(requested_size[0]/ratio_wanted)
-                
+
             size_ratio = requested_size[1]/original_screen[1]
             screen = pygame.display.set_mode(requested_size,pygame.RESIZABLE)
 

@@ -28,6 +28,7 @@ def create_user():
         if request.method == "POST":
 
             data = request.get_json()
+            print(data)
             status = auth_system.create_user(data['username'], data['password'])
 
             if status:

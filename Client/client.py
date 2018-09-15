@@ -104,19 +104,27 @@ class Card:
         self.img = None
         if "imageUrl" in card_DataB[cardname]:
             self.imgUrl = card_DataB[cardname]["imageUrl"]
+        
+        if "CardImages//"+self.cname+".jpg" in existingImages:
+            self.img = pygame.image.load("Card Name/" +self.cname+".jpg")
+            print(self.img)
+        card_DataB[cardname] 
+        
 
     def downloadIm(self):
-        if (not os.path.exists("Card Images/" + self.cname + ".jpg")):
-            image_url = self.imgUrl
-            img_data = requests.get(image_url).content
-            with open("Card Images/" + self.cname + '.jpg', 'wb') as handler:
-                handler.write(img_data)
-            self.img = pygame.image.load("Card Images/" + self.cname + ".jpg", "wb")
+            if(self.img==None):
+                image_url = self.imgUrl
+                img_data = requests.get(image_url).content
+                with open("Card Images/" + self.cname + '.jpg',"rb") as handler:
+                    handler.write(img_data)
+                self.img = pygame.image.load("Card Images/" + self.cname + ".jpg")
+                print(self.img)
 
 
 ################ Public functions #########################
-def transparent_rect(x, y, b, h, alpha):
+def transparent_rect(x, y, b, h, alpha,colour = (0,0,0)):
     transparent_screen = pygame.Surface((b, h))
+    transparent_screen.fill(colour)
     transparent_screen.set_alpha(alpha)
     return screen.blit(transparent_screen, (x, y))
 
@@ -165,7 +173,14 @@ def get_cards():
     ret_item = items.json()
     return ret_item["data"]
 
-
+def infoGraph (cardname):
+    currCard = card_database[cardname]
+    text = currCard.text
+    attack = currCard.power
+    tough = currCard.toughness
+    transparent_rect(625*size_ratio,100*size_ratio,140*size_ratio,300*size_ratio,125,(255,255,255))
+    screen.blit(currCard.img,(630,105))
+    
 ################ Game Variables #########################
 base_url = "https://mtg.jamesxu.ca/"
 existingImages = glob.glob("Card Images/*")
@@ -332,7 +347,7 @@ while running:
         text_with_outline(
             sc_params["Username"] + (current_selection == "Username" and cur_background // 8 % 2 == 0 and '|' or ""),
             myfont, (255, 255, 255), (0, 0, 0), int(400 * size_ratio) - x_taken // 2, int(472 * size_ratio), 1, False)
-
+        infoGraph("Adorable Kitten")
         x_taken = pygame.font.Font.size(myfont, sc_params["Password"])[0]
         text_with_outline(
             sc_params["Password"] + (current_selection == "Password" and cur_background // 8 % 2 == 0 and '|' or ""),

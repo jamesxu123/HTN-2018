@@ -23,8 +23,8 @@ class Deck:
         self.deck_list = deckl
         self.dname = deckname
 
-    def add_card(self, cardname, card_DataB):
-        self.deck_list.append(Card(cardname, card_DataB))
+    def add_card(self, card):
+        self.deck_list.append(card)
 
     def remove_card(self, card_name):
         found = False
@@ -151,7 +151,7 @@ def text_with_outline(text, myfont, col_main, col_outline, x, y, outline_width, 
 
 
 @functools.lru_cache(maxsize=None)
-def font_size(font, text, max_width, max_height, size):  # Recurssion with memoization
+def font_size(font, text, max_width, max_height, size):  # Recursion with memoization
     myfont = pygame.font.SysFont(font, size)
     x, y = pygame.font.Font.size(myfont, text)
     if x < max_width and y < max_height or size < 4:
@@ -181,6 +181,7 @@ def get_cards():
 
 
 ################ Game Variables #########################
+
 base_url = "https://mtg.jamesxu.ca/"
 existingImages = glob.glob("Card Images/*")
 if 'CardList.p' in glob.glob('*.p'):

@@ -1,8 +1,7 @@
 from pygame import *
 import threading
+import pickle
 from client import Deck, Card
-
-screen = display.set_mode((800, 600), RESIZABLE)
 
 
 def draw_deck(area, deck):
@@ -10,14 +9,15 @@ def draw_deck(area, deck):
     width = 120
     for card in deck.deck_list:
         has_img = card.img
-        if not has_img:
-            threading.Thread(target=card.downloadIm()).start()
+        if card.img == None:
+            card.downloadIm()
     x, y, w, h = area
 
     row_length = w // (width + 30)
     num_rows = total // (row_length + 30)
     remaining = total - row_length * num_rows
-    sample_height = 120 / width * deck.deck_list[0].get_height()
+    sample_height = 120 / width * deck.deck_list[0].img.get_height()
+
     surface = Surface((w, (sample_height+30) * num_rows))
 
     current_row = 0
@@ -43,3 +43,14 @@ def draw_deck(area, deck):
             current_row += 1
 
     return surface
+
+
+if __name__ == '__main__':
+    cards = pickle.load(open('CardList.p', 'rb'))
+    deck = Deck("deck1", [])
+    for i in range(60):
+        card = Card(list(cards.keys())[i], cards)
+        deck.add_card(card)
+    while True:
+        draw_deck(Rect(0,0,800,600), deck)
+        display.flip()

@@ -12,7 +12,9 @@ deck_system = decks.DeckHandler("s03.jamesxu.ca", "mtg", "mtg123", "mtg")
 
 
 def signed_in(username, token=0):
-    return auth_system.logged_in[username] == token
+    if username in auth_system.logged_in:
+        return auth_system.logged_in[username] == token
+    return False
 
 @app.route('/')
 def root():

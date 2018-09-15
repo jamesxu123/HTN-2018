@@ -148,7 +148,7 @@ def get_stats():
 
 @app.route('/get_cards', methods=["GET"])
 def get_cards():
-    cards = pickle.loads(open("CardList.p", "rb"))
+    cards = pickle.load(open("CardList.p", "rb"))
     print(len(cards))
     response = Response()
     response.set_data(json.dumps({"status": 500, "data": cards}))

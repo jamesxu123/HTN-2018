@@ -112,10 +112,9 @@ class Card:
         if "imageUrl" in card_DataB[cardname]:
             self.imgUrl = card_DataB[cardname]["imageUrl"]
         
-        if "CardImages//"+self.cname+".jpg" in existingImages:
-            self.img = pygame.image.load("Card Name/" +self.cname+".jpg")
-            print(self.img)
-        card_DataB[cardname] 
+        if "Card Images\\"+self.cname+".jpg" in existingImages:
+            print("HHHHHHHHHHIIIIIII")
+            self.img = pygame.image.load("Card Images/" +self.cname+".jpg")
         
 
     def downloadIm(self):
@@ -185,11 +184,13 @@ def get_cards():
 
 def infoGraph (cardname):
     currCard = card_database[cardname]
+    print(currCard.img)
     text = currCard.text
     attack = currCard.power
     tough = currCard.toughness
     transparent_rect(625*size_ratio,100*size_ratio,140*size_ratio,300*size_ratio,125,(255,255,255))
     screen.blit(currCard.img,(630,105))
+    
     
 ################ Game Variables #########################
 base_url = "https://mtg.jamesxu.ca/"

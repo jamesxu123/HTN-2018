@@ -106,12 +106,12 @@ class Card:
         
       
     def downloadIm(self):
-        if (not os.path.exists("Card Images\\"+self.cname+".jpg")):
+        if (not os.path.exists("Card Images/"+self.cname+".jpg")):
             image_url = self.imgUrl
             img_data = requests.get(image_url).content
-            with open("Card Images\\"+self.cname+'.jpg', 'wb') as handler:
+            with open("Card Images/"+self.cname+'.jpg', 'wb') as handler:
                 handler.write(img_data)
-            self.img = pygame.image.load("Card Images\\"+self.cname+".jpg","wb")
+            self.img = pygame.image.load("Card Images/"+self.cname+".jpg","wb")
         
             
 
@@ -193,7 +193,7 @@ images_database = {}
 
 path_way = os.path.dirname(os.path.realpath(__file__)) #Directory to the python file
 for image in os.listdir(path_way+"\Images"): #Loading images
-    save_path = "Images\\" + image
+    save_path = "Images//" + image
     if image[-3:]=="jpg" or image[-3:]=="png":
         curImg = pygame.image.load(save_path)
         sizes = list(map(int,image[image.rfind("_")+1:image.rfind(".")].split("x")))

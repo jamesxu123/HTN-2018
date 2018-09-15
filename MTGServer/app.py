@@ -1,9 +1,10 @@
+import json
+import pickle
+
+import auth
+import decks
 from flask import Flask
 from flask import request, Response
-import auth
-import json
-import decks
-import pickle
 
 app = Flask(__name__)
 
@@ -15,6 +16,7 @@ def signed_in(username, token=0):
     if username in auth_system.logged_in:
         return auth_system.logged_in[username] == token
     return False
+
 
 @app.route('/')
 def root():
@@ -117,7 +119,6 @@ def del_deck():
         if auth_system.user_exists(username) and signed_in(username, token):
             deck_name = data['deck_name']
 
-
             response = Response()
             response.set_data(json.dumps({"status": 200}))
 
@@ -165,14 +166,15 @@ def sign_out():
         if request.method == "POST":
 
             data = request.get_json()
-            status = auth_system.sign_out(data['username'])
+            if signed_in(data['username'], data['token']):
+                status = auth_system.sign_out(data['username'])
 
-            if status:
-                success = True
-                respArray = {"status": 200}
-                response = Response()
-                response.set_data(json.dumps(respArray))
-                return response
+                if status:
+                    success = True
+                    respArray = {"status": 200}
+                    response = Response()
+                    response.set_data(json.dumps(respArray))
+                    return response
 
     if not success:
         status = {"status": 500}

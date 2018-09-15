@@ -9,36 +9,38 @@ def draw_deck(area, deck):
     width = 120
     for card in deck.deck_list:
         has_img = card.img
-        if card.img == None:
+        if card.img is None:
             card.downloadIm()
+        else:
+            card.img = card.img.convert()
     x, y, w, h = area
 
-    row_length = w // (width + 30)
-    num_rows = total // (row_length + 30)
+    row_length = w // (width + 12)
+    num_rows = total // (row_length + 12)
     remaining = total - row_length * num_rows
     sample_height = 120 / width * deck.deck_list[0].img.get_height()
 
-    surface = Surface((w, (sample_height+30) * num_rows))
+    surface = Surface((w, (sample_height + 7) * (num_rows + 1 + int(remaining > 0))))
 
     current_row = 0
     current_col = 0
 
     for card in deck.deck_list:
         img = card.img
-        height = img.get_height()
-        width = img.get_width()
-        scaled = transform.smoothscale(img, (120, 120 / width * height))
+        scaled = transform.smoothscale(img, (120, 190))
+        height = scaled.get_height()
+        width = scaled.get_width()
 
-        if current_col == 0:
-            if current_row == 0:
-                surface.blit(scaled, (current_col, current_row))
-            else:
-                surface.blit(scaled, (current_col, current_row * height + 15))
-        else:
-            surface.blit(scaled, (current_col * height + 15, current_row * height + 15))
+        # if current_col == 0:
+        #     if current_row == 0:
+        #         surface.blit(scaled, (current_col, current_row))
+        #     else:
+        #         surface.blit(scaled, (current_col, current_row * height + 7))
+        # else:
+        surface.blit(scaled, (current_col * width + 12 * current_col, current_row * height + 12 * current_row))
 
         current_col += 1
-        if current_col % row_length == 0:
+        if current_col == row_length:
             current_col = 0
             current_row += 1
 
@@ -46,11 +48,28 @@ def draw_deck(area, deck):
 
 
 if __name__ == '__main__':
+    init()
     cards = pickle.load(open('CardList.p', 'rb'))
+    print(cards["Words of War"])
     deck = Deck("deck1", [])
-    for i in range(60):
+    for i in range(30):
         card = Card(list(cards.keys())[i], cards)
         deck.add_card(card)
-    while True:
-        draw_deck(Rect(0,0,800,600), deck)
+
+    screen = display.set_mode((800, 600), RESIZABLE)
+    running = True
+    offset = 0
+    while running:
+        screen.fill(0)
+        for e in event.get():
+            if e.type == QUIT:
+                running = False
+            if e.type == VIDEORESIZE:
+                x, y = e.w, e.h
+                screen = display.set_mode((x, y), RESIZABLE)
+            if e.type == MOUSEBUTTONDOWN and e.button == 4:
+                offset += 5
+            if e.type == MOUSEBUTTONDOWN and e.button == 5:
+                offset -= 5
+        screen.blit(draw_deck(Rect(0, 0, screen.get_width(), screen.get_height()), deck), (0, 0 + offset))
         display.flip()

@@ -116,13 +116,19 @@ class Card:
         if "imageUrl" in card_DataB[cardname]:
             self.imgUrl = card_DataB[cardname]["imageUrl"]
 
+        if "Card Images/" + self.cname + ".jpg" in existingImages:
+            self.img = pygame.image.load("Card Images/" + self.cname + ".jpg")
+            print(self.img)
+        card_DataB[cardname]
+
     def downloadIm(self):
-        if (not os.path.exists("Card Images/" + self.cname + ".jpg")):
+        if (self.img is None):
             image_url = self.imgUrl
             img_data = requests.get(image_url).content
-            with open("Card Images/" + self.cname + '.jpg', 'wb') as handler:
+            with open("Card Images/" + self.cname + '.jpg', "wb") as handler:
                 handler.write(img_data)
-            self.img = pygame.image.load("Card Images/" + self.cname + ".jpg", "wb")
+            self.img = pygame.image.load("Card Images/" + self.cname + ".jpg")
+            print(self.img)
 
     def __hash__(self):
         return hash(self.cname) ^ hash(self.text) ^ hash(self.imgUrl)
@@ -184,6 +190,7 @@ def get_cards():
 
 base_url = "https://mtg.jamesxu.ca/"
 existingImages = glob.glob("Card Images/*")
+print(existingImages)
 if 'CardList.p' in glob.glob('*.p'):
     card_database = pickle.load(open('CardList.p', 'rb'))
 else:
@@ -210,149 +217,160 @@ menu_specifications = {"Login Menu": {"Username": "Username", "Password": "Passw
                        }
 
 # Setting up pygame
-original_screen = [800, 600]
-screen = pygame.display.set_mode(original_screen, pygame.RESIZABLE)
+if __name__ == '__main__':
+    original_screen = [800, 600]
+    screen = pygame.display.set_mode(original_screen, pygame.RESIZABLE)
 
-pygame.display.set_caption("HTN Program")
-size_ratio = 1
+    pygame.display.set_caption("HTN Program")
+    size_ratio = 1
 
-original_images = {}
-images_database = {}
+    original_images = {}
+    images_database = {}
 
-path_way = os.path.dirname(os.path.realpath(__file__))  # Directory to the python file
-for image in os.listdir(path_way + "/Images"):  # Loading images
-    save_path = "Images/" + image
-    if image[-3:] == "jpg" or image[-3:] == "png":
-        curImg = pygame.image.load(save_path)
-        sizes = list(map(int, image[image.rfind("_") + 1:image.rfind(".")].split("x")))
-        original_images[image[:image.rfind("_")]] = [curImg, sizes[0], sizes[1]]
+    path_way = os.path.dirname(os.path.realpath(__file__))  # Directory to the python file
+    for image in os.listdir(path_way + "/Images"):  # Loading images
+        save_path = "Images/" + image
+        if image[-3:] == "jpg" or image[-3:] == "png":
+            curImg = pygame.image.load(save_path)
+            sizes = list(map(int, image[image.rfind("_") + 1:image.rfind(".")].split("x")))
+            original_images[image[:image.rfind("_")]] = [curImg, sizes[0], sizes[1]]
 
-################ Connecting socket #########################
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-host_ip = "localhost"
-port = 224
-# server.connect((host_ip, port))
-images_database = {}
-
-
-def setup():
-    global images_database
-    for image in original_images:
-        im = original_images[image][:]
-        try:
-            images_database[image] = pygame.transform.smoothscale(im[0],
-                                                                  (int(size_ratio * im[1]), int(size_ratio * im[2])))
-        except:
-            images_database[image] = pygame.transform.scale(im[0], (int(size_ratio * im[1]), int(size_ratio * im[2])))
+    ################ Connecting socket #########################
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    host_ip = "localhost"
+    port = 224
+    # server.connect((host_ip, port))
+    images_database = {}
 
 
-setup()
-################ Game loop #########################
-running = True
-start = time.time()
-first = True
+    def setup():
+        global images_database
+        for image in original_images:
+            im = original_images[image][:]
+            try:
+                images_database[image] = pygame.transform.smoothscale(im[0],
+                                                                      (
+                                                                          int(size_ratio * im[1]),
+                                                                          int(size_ratio * im[2])))
+            except:
+                images_database[image] = pygame.transform.scale(im[0],
+                                                                (int(size_ratio * im[1]), int(size_ratio * im[2])))
 
-while running:
-    clicked = False
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # They clicked with the left click
-            clicked = True
-        elif event.type == pygame.KEYDOWN and typing:
-            if event.key == pygame.K_BACKSPACE:
-                if len(typing_reference[current_selection]) > 0:
-                    typing_reference[current_selection] = typing_reference[current_selection][:-1]
 
-            elif event.key == pygame.K_KP_ENTER or event.key == pygame.K_RETURN:  # Remove it
-                typing = False
-                typing_reference = None
-                current_selection = "Nil"
+    setup()
+    ################ Game loop #########################
+    running = True
+    start = time.time()
+    first = True
 
-            elif event.key < 256:  # Add new char
-                typing_reference[current_selection] += event.unicode
+    while running:
+        clicked = False
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # They clicked with the left click
+                clicked = True
+            elif event.type == pygame.KEYDOWN and typing:
+                if event.key == pygame.K_BACKSPACE:
+                    if len(typing_reference[current_selection]) > 0:
+                        typing_reference[current_selection] = typing_reference[current_selection][:-1]
 
-        elif event.type == pygame.VIDEORESIZE:
-            print('resize')
-            x, y = event.w, event.h
-            requested_size = [x, y]
-            ratio_wanted = original_screen[0] / original_screen[1]
-            ratio_requested = requested_size[0] / requested_size[1]
+                elif event.key == pygame.K_KP_ENTER or event.key == pygame.K_RETURN:  # Remove it
+                    typing = False
+                    typing_reference = None
+                    current_selection = "Nil"
 
-            if ratio_requested > ratio_wanted + 0.01:
-                requested_size[0] = int(requested_size[1] * ratio_wanted)
-            elif ratio_requested < ratio_wanted - 0.01:
-                requested_size[1] = int(requested_size[0] / ratio_wanted)
+                elif event.key < 256:  # Add new char
+                    typing_reference[current_selection] += event.unicode
 
-            size_ratio = requested_size[1] / original_screen[1]
-            screen = pygame.display.set_mode(requested_size, pygame.RESIZABLE)
+            elif event.type == pygame.VIDEORESIZE:
+                print('resize')
+                x, y = event.w, event.h
+                requested_size = [x, y]
+                ratio_wanted = original_screen[0] / original_screen[1]
+                ratio_requested = requested_size[0] / requested_size[1]
 
-            # Resize images
-            images_database = {}
-            for image in original_images:
-                im = original_images[image][:]
-                try:
-                    images_database[image] = pygame.transform.smoothscale(im[0], (
-                        int(size_ratio * im[1]), int(size_ratio * im[2])))
-                except:
-                    images_database[image] = pygame.transform.scale(im[0],
-                                                                    (int(size_ratio * im[1]), int(size_ratio * im[2])))
+                if ratio_requested > ratio_wanted + 0.01:
+                    requested_size[0] = int(requested_size[1] * ratio_wanted)
+                elif ratio_requested < ratio_wanted - 0.01:
+                    requested_size[1] = int(requested_size[0] / ratio_wanted)
 
-    if clicked and typing:  # Remove it
-        typing = False
-        typing_reference = None
-        current_selection = "Nil"
+                size_ratio = requested_size[1] / original_screen[1]
+                screen = pygame.display.set_mode(requested_size, pygame.RESIZABLE)
 
-    cur = time.time()
-    mx, my = pygame.mouse.get_pos()
+                # Resize images
+                images_database = {}
+                for image in original_images:
+                    im = original_images[image][:]
+                    try:
+                        images_database[image] = pygame.transform.smoothscale(im[0], (
+                            int(size_ratio * im[1]), int(size_ratio * im[2])))
+                    except:
+                        images_database[image] = pygame.transform.scale(im[0],
+                                                                        (int(size_ratio * im[1]),
+                                                                         int(size_ratio * im[2])))
 
-    sc_params = menu_specifications[current_screen]
-    screen.fill((255, 255, 255))
-    if current_screen == "Login Menu":
-        cur_background += bck_direction
-        if cur_background == 48 or cur_background == 0:
-            bck_direction *= -1
+        if clicked and typing:  # Remove it
+            typing = False
+            typing_reference = None
+            current_selection = "Nil"
 
-        screen.blit(images_database["IntroGif%i" % (cur_background)], [int(e * size_ratio) for e in [0, 0]])
-        for i in range(2):
-            im_name, im_pos = ["Sign Up", "Sign In"][i], [[675, 462], [675, 537]][i]
-            im_pos = [int(e * size_ratio) for e in im_pos]
-            item = screen.blit(images_database[im_name], im_pos)
-            if item.collidepoint(mx, my) and clicked:  # They signed up or in!
-                user_item.make_user(sc_params["Username"], sc_params["Password"], ["create_user", "sign_in"][i])
+        cur = time.time()
+        mx, my = pygame.mouse.get_pos()
 
-        # Username and password bars
-        buttons = [
-            transparent_rect(int(275 * size_ratio), int(470 * size_ratio), int(250 * size_ratio), int(40 * size_ratio),
-                             120),
-            transparent_rect(int(275 * size_ratio), int(545 * size_ratio), int(250 * size_ratio), int(40 * size_ratio),
-                             120)]
+        sc_params = menu_specifications[current_screen]
+        screen.fill((255, 255, 255))
+        if current_screen == "Login Menu":
+            cur_background += bck_direction
+            if cur_background == 48 or cur_background == 0:
+                bck_direction *= -1
 
-        for a in range(2):
-            if buttons[a].collidepoint(mx, my) and clicked:
-                current_selection = ["Username", "Password"][a]
-                sc_params[current_selection] = ""
-                typing = True
-                typing_reference = sc_params
+            screen.blit(images_database["IntroGif%i" % (cur_background)], [int(e * size_ratio) for e in [0, 0]])
+            for i in range(2):
+                im_name, im_pos = ["Sign Up", "Sign In"][i], [[675, 462], [675, 537]][i]
+                im_pos = [int(e * size_ratio) for e in im_pos]
+                item = screen.blit(images_database[im_name], im_pos)
+                if item.collidepoint(mx, my) and clicked:  # They signed up or in!
+                    user_item.make_user(sc_params["Username"], sc_params["Password"], ["create_user", "sign_in"][i])
 
-        largest_size1, x_taken1, y_taken, myfont1 = font_size("timesnewroman", sc_params["Username"],
-                                                              int(275 * size_ratio), int(40 * size_ratio), 60)
-        largest_size2, x_taken2, y_taken, myfont2 = font_size("timesnewroman", sc_params["Password"],
-                                                              int(275 * size_ratio), int(40 * size_ratio), 60)
+            # Username and password bars
+            buttons = [
+                transparent_rect(int(275 * size_ratio), int(470 * size_ratio), int(250 * size_ratio),
+                                 int(40 * size_ratio),
+                                 120),
+                transparent_rect(int(275 * size_ratio), int(545 * size_ratio), int(250 * size_ratio),
+                                 int(40 * size_ratio),
+                                 120)]
 
-        mysize = largest_size1 < largest_size2 and largest_size1 or largest_size2
-        myfont = pygame.font.SysFont("timesnewroman", mysize)  # Make for both
+            for a in range(2):
+                if buttons[a].collidepoint(mx, my) and clicked:
+                    current_selection = ["Username", "Password"][a]
+                    sc_params[current_selection] = ""
+                    typing = True
+                    typing_reference = sc_params
 
-        x_taken = pygame.font.Font.size(myfont, sc_params["Username"])[0]
-        text_with_outline(
-            sc_params["Username"] + (current_selection == "Username" and cur_background // 8 % 2 == 0 and '|' or ""),
-            myfont, (255, 255, 255), (0, 0, 0), int(400 * size_ratio) - x_taken // 2, int(472 * size_ratio), 1, False)
+            largest_size1, x_taken1, y_taken, myfont1 = font_size("timesnewroman", sc_params["Username"],
+                                                                  int(275 * size_ratio), int(40 * size_ratio), 60)
+            largest_size2, x_taken2, y_taken, myfont2 = font_size("timesnewroman", sc_params["Password"],
+                                                                  int(275 * size_ratio), int(40 * size_ratio), 60)
 
-        x_taken = pygame.font.Font.size(myfont, sc_params["Password"])[0]
-        text_with_outline(
-            sc_params["Password"] + (current_selection == "Password" and cur_background // 8 % 2 == 0 and '|' or ""),
-            myfont, (255, 255, 255), (0, 0, 0), int(400 * size_ratio) - x_taken // 2, int(547 * size_ratio), 1, False)
+            mysize = largest_size1 < largest_size2 and largest_size1 or largest_size2
+            myfont = pygame.font.SysFont("timesnewroman", mysize)  # Make for both
 
-    pygame.display.flip()
-    time.sleep(0.04)
-pygame.quit()
+            x_taken = pygame.font.Font.size(myfont, sc_params["Username"])[0]
+            text_with_outline(
+                sc_params["Username"] + (
+                        current_selection == "Username" and cur_background // 8 % 2 == 0 and '|' or ""),
+                myfont, (255, 255, 255), (0, 0, 0), int(400 * size_ratio) - x_taken // 2, int(472 * size_ratio), 1,
+                False)
+
+            x_taken = pygame.font.Font.size(myfont, sc_params["Password"])[0]
+            text_with_outline(
+                sc_params["Password"] + (
+                        current_selection == "Password" and cur_background // 8 % 2 == 0 and '|' or ""),
+                myfont, (255, 255, 255), (0, 0, 0), int(400 * size_ratio) - x_taken // 2, int(547 * size_ratio), 1,
+                False)
+
+        pygame.display.flip()
+        time.sleep(0.04)
+    pygame.quit()

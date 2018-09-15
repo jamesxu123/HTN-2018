@@ -30,6 +30,7 @@ class AuthObject:
                         % (username, hashed))
 
             self.db.commit()  # Commit changes
+            return True
         else:
             return False
 

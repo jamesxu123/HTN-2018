@@ -26,11 +26,18 @@ class Deck:
     def add_card(self, cardname, card_DataB):
         self.deck_list.append(Card(cardname, card_DataB))
 
-    def remove_card(self):
-        pass
+    def remove_card(self, card_name):
+        found = False
+        for card in self.deck_list:
+            if card.cname == card_name:
+                found = True
+                break
+        if found:
+            del self.deck_list[card]
 
-    def save(self):
-        pass
+
+    def save(self, user):
+        user.curDecks[self.dname] = self.deck_list
 
     def delete(self):
         pass
@@ -112,6 +119,9 @@ class Card:
             with open("Card Images/" + self.cname + '.jpg', 'wb') as handler:
                 handler.write(img_data)
             self.img = pygame.image.load("Card Images/" + self.cname + ".jpg", "wb")
+
+    def __hash__(self):
+        return hash(self.cname) ^ hash(self.text) ^ hash(self.imgUrl)
 
 
 ################ Public functions #########################

@@ -28,8 +28,6 @@ class Deck:
     def remove_card(self):
         pass
 
-    def save(self):
-        pass
 
     def delete(self):
         pass
@@ -109,16 +107,9 @@ class Card:
             self.imgUrl = card_DataB[cardname]["imageUrl"]
 
     def downloadIm(self):
-        if (not os.path.exists("Card Images/" + self.cname + ".jpg")):
-            image_url = self.imgUrl
-            img_data = requests.get(image_url).content
-            with open("Card Images/" + self.cname + '.jpg', 'wb') as handler:
-                handler.write(img_data)
-            self.img = pygame.image.load("Card Images/" + self.cname + ".jpg", "wb")
 
 
 ################ Public functions #########################
-def transparent_rect(x, y, b, h, alpha):
     transparent_screen = pygame.Surface((b, h))
     transparent_screen.set_alpha(alpha)
     return screen.blit(transparent_screen, (x, y))
@@ -168,7 +159,6 @@ def get_cards():
     ret_item = items.json()
     print("Request returned")
     return ret_item["data"]
-
 
 ################ Game Variables #########################
 base_url = "https://mtg.jamesxu.ca/"

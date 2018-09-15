@@ -28,8 +28,6 @@ class Deck:
     def remove_card(self):
         pass
 
-    def save(self):
-        pass
 
     def delete(self):
         pass
@@ -107,18 +105,19 @@ class Card:
         self.img = None
         if "imageUrl" in card_DataB[cardname]:
             self.imgUrl = card_DataB[cardname]["imageUrl"]
+<<<<<<< HEAD
+        
+        if "Card Images\\"+self.cname+".jpg" in existingImages:
+            print("HHHHHHHHHHIIIIIII")
+            self.img = pygame.image.load("Card Images/" +self.cname+".jpg")
+        
+=======
+>>>>>>> d3b139a7231691be2c2ba772fc1352c418160a68
 
     def downloadIm(self):
-        if (not os.path.exists("Card Images/" + self.cname + ".jpg")):
-            image_url = self.imgUrl
-            img_data = requests.get(image_url).content
-            with open("Card Images/" + self.cname + '.jpg', 'wb') as handler:
-                handler.write(img_data)
-            self.img = pygame.image.load("Card Images/" + self.cname + ".jpg", "wb")
 
 
 ################ Public functions #########################
-def transparent_rect(x, y, b, h, alpha):
     transparent_screen = pygame.Surface((b, h))
     transparent_screen.set_alpha(alpha)
     return screen.blit(transparent_screen, (x, y))
@@ -169,7 +168,19 @@ def get_cards():
     print("Request returned")
     return ret_item["data"]
 
-
+<<<<<<< HEAD
+def infoGraph (cardname):
+    currCard = card_database[cardname]
+    print(currCard.img)
+    text = currCard.text
+    attack = currCard.power
+    tough = currCard.toughness
+    transparent_rect(625*size_ratio,100*size_ratio,140*size_ratio,300*size_ratio,125,(255,255,255))
+    screen.blit(currCard.img,(630,105))
+    
+    
+=======
+>>>>>>> d3b139a7231691be2c2ba772fc1352c418160a68
 ################ Game Variables #########################
 base_url = "https://mtg.jamesxu.ca/"
 existingImages = glob.glob("Card Images/*")

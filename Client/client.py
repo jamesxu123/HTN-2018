@@ -162,7 +162,7 @@ def get_cards():
 
 ################ Game Variables #########################
 base_url = "https://mtg.jamesxu.ca/"
-existingImages = glob.glob("Card Images//*")
+existingImages = glob.glob("Card Images/*")
 card_database =get_cards()
 for card in card_database:
     card_database[card] = Card(card,card_database)
@@ -192,8 +192,8 @@ original_images = {}
 images_database = {}
 
 path_way = os.path.dirname(os.path.realpath(__file__)) #Directory to the python file
-for image in os.listdir(path_way+"\Images"): #Loading images
-    save_path = "Images//" + image
+for image in os.listdir(path_way+"/Images"): #Loading images
+    save_path = "Images/" + image
     if image[-3:]=="jpg" or image[-3:]=="png":
         curImg = pygame.image.load(save_path)
         sizes = list(map(int,image[image.rfind("_")+1:image.rfind(".")].split("x")))

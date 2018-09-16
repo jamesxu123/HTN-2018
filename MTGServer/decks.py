@@ -1,5 +1,6 @@
 import auth
 import json
+import re
 
 
 class DeckHandler(auth.AuthObject):
@@ -7,7 +8,7 @@ class DeckHandler(auth.AuthObject):
     def retrieve_decks(self, username):
         if self.user_exists(username):
             cur = self.db.cursor()
-            cur.execute("SELECT deck FROM users WHERE username = '%s';" %username)
+            cur.execute("SELECT deck FROM users WHERE username = '%s';" % username)
             for row in cur.fetchall():
                 deck = row[0]
                 return deck
@@ -17,12 +18,16 @@ class DeckHandler(auth.AuthObject):
         if self.user_exists(username):
             cur = self.db.cursor()
             decks = self.retrieve_decks(username)
+            if decks:
+                decks = json.loads(decks)
+            else:
+                decks = {}
+            if new_deck:
+                decks[new_deck_name] = new_deck
+            else:
+                decks[new_deck_name] = []
 
-            decks = json.loads(decks)
-
-            decks[new_deck_name] = new_deck
-
-            cur.execute("UPDATE users SET deck = %s WHERE username = '%s';" %(json.dumps(new_deck), username))
+            cur.execute("UPDATE users SET deck = '%s' WHERE username = '%s';" % (json.dumps(decks), username))
 
             self.db.commit()
 
@@ -37,19 +42,17 @@ class DeckHandler(auth.AuthObject):
 
         del decks[deck_name]
 
-        cur.execute("UPDATE users SET deck = %s WHERE username = '%s';" % (json.dumps(decks), username))
+        cur.execute("UPDATE users SET deck = '%s' WHERE username = '%s';" % (json.dumps(decks), username))
+
+        self.db.commit()
 
     def get_stats(self, username):
         cur = self.db.cursor()
 
-        cur.execute("SELECT wins, losses FROM users WHERE username = '%s';" %username)
+        cur.execute("SELECT wins, losses FROM users WHERE username = '%s';" % username)
 
         for row in cur.fetchall():
             wins = row[0]
             losses = row[0]
             return {"wins": wins, "losses": losses}
         return False
-
-
-
-

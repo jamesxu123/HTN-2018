@@ -8,13 +8,13 @@ class AuthObject:
         self.db = sql.connect(host=hostaddr,
                               user=username,
                               password=password,
-                              db = dbname)
+                              db=dbname)
         self.logged_in = {}
 
     def user_exists(self, username):
         cur = self.db.cursor()
-        print("SELECT * FROM users WHERE username = '%s';" %(username))
-        cur.execute("SELECT * FROM users WHERE username='%s';" %(username))
+        print("SELECT * FROM users WHERE username = '%s';" % (username))
+        cur.execute("SELECT * FROM users WHERE username='%s';" % (username))
 
         if cur.rowcount < 1:
             return False
@@ -38,7 +38,7 @@ class AuthObject:
         ph = PasswordHasher()
         cur = self.db.cursor()
         if self.user_exists(username):
-            cur.execute("SELECT password FROM users WHERE username = '%s';" %username)
+            cur.execute("SELECT password FROM users WHERE username = '%s';" % username)
             for row in cur.fetchall():
                 if ph.verify(row[0], password):
                     token = uuid.uuid4()

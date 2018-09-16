@@ -77,7 +77,8 @@ def get_decks():
         resp = deck_system.retrieve_decks(username)
         if resp:
             response = Response()
-            response.set_data(json.dumps({"status": 200, "data": resp}))
+            print(resp)
+            response.set_data(json.dumps({"status": 200, "data": json.loads(resp), "extra":{"hello":[1,2,3]}}))
 
             return response
 
@@ -97,15 +98,15 @@ def set_deck():
             deck_name = data['deck_name']
             deck_data = data['deck_data']
 
-            deck_system.set_deck(username, deck_name, deck_data)
-
-            response = Response()
-            response.set_data(json.dumps({"status": 200}))
-
-            return response
+            status = deck_system.set_deck(username, deck_name, deck_data)
+            if status:
+                response = Response()
+                response.set_data(json.dumps({"status": 200}))
+                return response
 
     response = Response()
     response.set_data(json.dumps({"status": 500}))
+    print(response)
     return response
 
 
@@ -116,16 +117,17 @@ def del_deck():
     if request.method == "POST":
         data = request.get_json()
         username = data['username']
+        deck_name = data['deck_name']
         if auth_system.user_exists(username) and signed_in(username, token):
-            deck_name = data['deck_name']
+            status = deck_system.del_deck(username, deck_name)
 
-            response = Response()
-            response.set_data(json.dumps({"status": 200}))
-
-            return response
+            if status:
+                response = Response()
+                response.set_data(json.dumps({"status": 200}))
+                return response
 
     response = Response()
-    response.set_data(json.dumps({"status": 500, "data": None}))
+    response.set_data(json.dumps({"status": 500}))
     return response
 
 
@@ -181,6 +183,18 @@ def sign_out():
         response = Response()
         response.set_data(json.dumps(status))
         return response
+
+
+@app.route('/update_stats', methods=["POST"])
+def update_sets():
+    success = False
+    if request.path == '/update_stats':
+        if request.method == "POST":
+            data = request.get_json()
+            username = data['username']
+            token = data['token']
+            if signed_in(username, token):
+                status = None
 
 
 if __name__ == '__main__':

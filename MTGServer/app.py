@@ -78,7 +78,7 @@ def get_decks():
         if resp:
             response = Response()
             print(resp)
-            response.set_data(json.dumps({"status": 200, "data": json.loads(resp)}))
+            response.set_data(json.dumps({"status": 200, "data": json.loads(resp), "extra":{"hello":[1,2,3]}}))
 
             return response
 

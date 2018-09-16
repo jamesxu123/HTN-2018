@@ -19,8 +19,10 @@ class DeckHandler(auth.AuthObject):
             decks = self.retrieve_decks(username)
 
             decks = json.loads(decks)
-
-            decks[new_deck_name] = new_deck
+            if new_deck:
+                decks[new_deck_name] = new_deck
+            else:
+                decks[new_deck_name] = []
 
             cur.execute("UPDATE users SET deck = %s WHERE username = '%s';" % (json.dumps(new_deck), username))
 

@@ -11,7 +11,7 @@ class DeckHandler(auth.AuthObject):
             cur.execute("SELECT deck FROM users WHERE username = '%s';" % username)
             for row in cur.fetchall():
                 deck = row[0]
-                return json.dumps(deck)
+                return json.loads(deck)
         return False
 
     def set_deck(self, username, new_deck_name, new_deck):

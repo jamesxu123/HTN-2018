@@ -17,8 +17,7 @@ class DeckHandler(auth.AuthObject):
         if self.user_exists(username):
             cur = self.db.cursor()
             decks = self.retrieve_decks(username)
-            if not decks:
-                return False
+
             decks = json.loads(decks)
 
             decks[new_deck_name] = new_deck
@@ -39,6 +38,8 @@ class DeckHandler(auth.AuthObject):
         del decks[deck_name]
 
         cur.execute("UPDATE users SET deck = %s WHERE username = '%s';" % (json.dumps(decks), username))
+
+        self.db.commit()
 
     def get_stats(self, username):
         cur = self.db.cursor()

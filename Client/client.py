@@ -56,7 +56,7 @@ class Deck:
         for card in self.deck_list:
             img = card.img
             if img is not None:
-                scaled = img
+                scaled = pygame.transform.smoothscale(img, (120, 190))
 
                 height = scaled.get_height()
                 width = scaled.get_width()
@@ -121,7 +121,7 @@ class User:
                 print("Account log in")
 
             if len(self.curDecks) > 0:
-                menu_specifications["Deck Building"]["Current Deck"] = list(curDecks.values())[0]
+                menu_specifications["Deck Building"]["Current Deck"] = list(self.curDecks.values())[0]
             else:
                 menu_specifications["Deck Building"]["Current Deck"] = Deck("Default", [])
             return True
@@ -183,7 +183,8 @@ class Card:
         if (self.img == None and self.imgUrl):
             image_url = self.imgUrl
             img_data = requests.get(image_url).content
-            self.img = pygame.transform.smoothscale(pygame.image.load(io.BytesIO(img_data)).convert(), (120, 190))
+            self.img = pygame.transform.smoothscale(pygame.image.load(io.BytesIO(img_data)).convert(),
+                                                    [int(e * size_ratio) for e in (90, 120)])
 
     def __hash__(self):
         return hash(self.cname) ^ hash(self.text) ^ hash(self.imgUrl)
@@ -206,16 +207,44 @@ def transparent_rect(x, y, b, h, alpha, colour=(0, 0, 0)):
     return screen.blit(saved_surfaces[spec_key], (x, y))
 
 
-def make_paragraph(allLines, myfont, col_main, col_out):
-    word = allLines.split(" ")
-    count = 0
-    while word:
-        string = word[:5]
-        string = " ".join(string)
-        word = word[5:]
-        count += 1
-        text_with_outline(string, myfont, col_main, col_out, 858 * size_ratio,
-                          361 * size_ratio + count * 15 * size_ratio, 1, False)
+@functools.lru_cache(maxsize=256)
+def split_lines(text_wanted, x, y, w, h):
+    # Find maximum chars in a line
+    myfont = pygame.font.Font("avenir.otf", int(15 * size_ratio))
+    for char_max in range(0, 50, 2):  # Find the maximum number of characters we can fit on a line
+        if pygame.font.Font.size(myfont, "_" * char_max)[0] > w:
+            break
+
+    # Split it into lines
+    lines = []
+    words = text_wanted.split()
+    current_line = ""
+    for word in words:
+        if len(current_line + " " + word) > char_max:
+            lines.append(current_line)
+            current_line = word
+        else:
+            current_line += " " + word
+
+    lines.append(current_line)
+
+    return lines
+
+
+def make_paragraph(screen, text_wanted, x, y, w, h, line_start):
+    lines = split_lines(text_wanted, x, y, w, h)
+    line_start = min(len(lines) - 1, line_start)
+
+    myfont = pygame.font.Font("avenir.otf", int(15 * size_ratio))
+    # Figure out y dist between them
+    largest_y = -1
+    for line in lines[line_start:min(len(lines), line_start + 8)]:
+        largest_y = max(largest_y, pygame.font.Font.size(myfont, line)[1])
+
+    for a in range(8):  # Make up to 8 lines
+        if largest_y * a > h or line_start + a >= len(lines):  # Will go too far down
+            break
+        text_with_outline(lines[a + line_start], myfont, (255, 255, 255), (0, 0, 0), x, y + a * largest_y, 1, False)
 
 
 def text_with_outline(text, myfont, col_main, col_outline, x, y, outline_width, scale_needed):
@@ -230,7 +259,7 @@ def text_with_outline(text, myfont, col_main, col_outline, x, y, outline_width, 
     #     stuff[a][1] += extra[a][1]
     # for outlinePos in stuff[:-1]:
     #     screen.blit(outline_text, outlinePos)
-    screen.blit(main_text, (x,y))
+    screen.blit(main_text, (x, y))
 
 
 def drawCard(cardname):
@@ -241,8 +270,14 @@ def drawCard(cardname):
             threading.Thread(target=curCard.downloadIm).start()
             image = curCard.img
 
+        # In case it was no longer selected
+        if menu_specifications["Deck Building"]["Reading Card"] != curCard:
+            return
+        screen.blit(behind_card, (int(850 * size_ratio), int(150 * size_ratio)))
+        transparent_rect(int(850 * size_ratio), int(150 * size_ratio), int(150 * size_ratio),
+                         int(303 * size_ratio), 90)
+
         if image:
-            image = pygame.transform.smoothscale(image, (int(90 * size_ratio), int(120 * size_ratio)))
             screen.blit(image, (int(883 * size_ratio), int(200 * size_ratio)))
 
         # Card Name
@@ -259,13 +294,13 @@ def drawCard(cardname):
                                             int(30 * size_ratio), 30)
             text_with_outline("Tough: " + curCard.toughness, myfont, (255, 255, 255), (0, 0, 0), 858 * size_ratio,
                               340 * size_ratio + (50 * size_ratio - y) / 2, 1, False)
-        # Text
-        myfont = pygame.font.Font("avenir.otf", int(12 * size_ratio))
-        cutoff = sc_params["Read Scroll"]
-        words_ver = curCard.text.split()
-        make_paragraph(" ".join(words_ver[cutoff:cutoff + 15]), myfont, (255, 255, 255), (0, 0, 0))
-    except:
-        print("There was an error with the card label")
+            make_paragraph(screen, curCard.text, int(858 * size_ratio), int(382 * size_ratio), int(135 * size_ratio),
+                           int(55 * size_ratio), sc_params["Read Scroll"])
+        else:
+            make_paragraph(screen, curCard.text, int(858 * size_ratio), int(330 * size_ratio), int(135 * size_ratio),
+                           int(100 * size_ratio), sc_params["Read Scroll"])
+    except Exception as e:
+        print(e)
         pass
 
 
@@ -366,6 +401,8 @@ port = 224
 # server.connect((host_ip, port))
 images_database = {}
 
+behind_card = None
+
 
 def setup():
     global images_database
@@ -376,6 +413,14 @@ def setup():
                                                                   (int(size_ratio * im[1]), int(size_ratio * im[2])))
         except:
             images_database[image] = pygame.transform.scale(im[0], (int(size_ratio * im[1]), int(size_ratio * im[2])))
+
+    surface = pygame.Surface([size_ratio * e for e in original_screen])
+    surface.blit(images_database["DeckBck"], (0, 0))
+    sur_im = surface.copy()
+
+    global behind_card
+    behind_card = sur_im.subsurface(
+        pygame.Rect(int(850 * size_ratio), int(150 * size_ratio), int(150 * size_ratio), int(303 * size_ratio)))
 
 
 setup()
@@ -457,13 +502,15 @@ while running:
     if cur_background == 47 or cur_background == 0:
         bck_direction *= -1
     if current_screen == "Login Menu":
-        screen.blit(images_database["IntroGif%i" % (cur_background)], [int(e * size_ratio) for e in [0, 0]])
+        str_wanted = abs(47 - (cur // 0.06) % 94)
+        screen.blit(images_database["IntroGif%i" % (str_wanted)], [int(e * size_ratio) for e in [0, 0]])
         for i in range(2):
-            im_name, im_pos = ["Sign Up", "Sign In"][i], [[800, 510], [800, 560]][i]
+            im_name, im_pos = ["Sign Up", "Sign In"][i], [[800, 510], [800, 570]][i]
             im_pos = [int(e * size_ratio) for e in im_pos]
             item = screen.blit(images_database[im_name], im_pos)
             if item.collidepoint(mx, my) and clicked:  # They signed up or in!
-                user_item.make_user(sc_params["Username"], sc_params["Password"], ["create_user", "sign_in"][i])
+                threading._start_new_thread(user_item.make_user, (
+                sc_params["Username"], sc_params["Password"], ["create_user", "sign_in"][i]))
 
         # Username and password bars
         buttons = [
@@ -520,9 +567,9 @@ while running:
         largest_size, x_taken, y_taken, myfont = font_size("Avenir", "One show fits all is the solution",
                                                            int(200 * size_ratio), int(50 * size_ratio), 60)
         reading_bar = transparent_rect(int(850 * size_ratio), int(150 * size_ratio), int(150 * size_ratio),
-                                       int(300 * size_ratio), 90)
+                                       int(303 * size_ratio), 90)
         if reading_bar.collidepoint((mx, my)):
-            sc_params["Read Scroll"] += scrolled
+            sc_params["Read Scroll"] = max(scrolled + sc_params["Read Scroll"], 0)
 
         for a in range(sc_params["Current_Scroll"], sc_params["Current_Scroll"] + 18):
             if a >= len(sc_params["Items"]):
@@ -533,6 +580,10 @@ while running:
             if card_bar.collidepoint((mx, my)):
                 transparent_rect(0, int((a - sc_params["Current_Scroll"] + 2) * 50 * size_ratio), int(200 * size_ratio),
                                  int(50 * size_ratio), 50)
+
+                if sc_params["Reading Card"] != card_object:
+                    sc_params["Read Scroll"] = 0
+
                 sc_params["Reading Card"] = card_object
                 if clicked:  # Adding cards
                     sc_params["Current Deck"].add_card(card_object)

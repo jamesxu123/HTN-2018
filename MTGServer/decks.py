@@ -17,7 +17,8 @@ class DeckHandler(auth.AuthObject):
         if self.user_exists(username):
             cur = self.db.cursor()
             decks = self.retrieve_decks(username)
-
+            if not decks:
+                return False
             decks = json.loads(decks)
 
             decks[new_deck_name] = new_deck

@@ -97,12 +97,12 @@ def set_deck():
             deck_name = data['deck_name']
             deck_data = data['deck_data']
 
-            deck_system.set_deck(username, deck_name, deck_data)
+            status = deck_system.set_deck(username, deck_name, deck_data)
+            if status:
+                response = Response()
+                response.set_data(json.dumps({"status": 200}))
 
-            response = Response()
-            response.set_data(json.dumps({"status": 200}))
-
-            return response
+                return response
 
     response = Response()
     response.set_data(json.dumps({"status": 500}))

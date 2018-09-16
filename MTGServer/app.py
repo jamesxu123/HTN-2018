@@ -77,7 +77,8 @@ def get_decks():
         resp = deck_system.retrieve_decks(username)
         if resp:
             response = Response()
-            response.set_data(json.dumps({"status": 200, "data": resp}))
+            print(json.loads(resp))
+            response.set_data(json.dumps({"status": 200, "data": json.loads(resp)}))
 
             return response
 

@@ -96,6 +96,7 @@ def set_deck():
         if auth_system.user_exists(username) and signed_in(username, token):
             deck_name = data['deck_name']
             deck_data = data['deck_data']
+            print(data)
 
             status = deck_system.set_deck(username, deck_name, deck_data)
             if status:

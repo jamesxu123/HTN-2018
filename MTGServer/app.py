@@ -101,11 +101,11 @@ def set_deck():
             if status:
                 response = Response()
                 response.set_data(json.dumps({"status": 200}))
-
                 return response
 
     response = Response()
     response.set_data(json.dumps({"status": 500}))
+    print(response)
     return response
 
 

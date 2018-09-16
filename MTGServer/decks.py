@@ -27,7 +27,7 @@ class DeckHandler(auth.AuthObject):
             else:
                 decks[new_deck_name] = []
 
-            cur.execute("UPDATE users SET deck = %s WHERE username = '%s';" % (re.escape(json.dumps(new_deck)), username))
+            cur.execute("UPDATE users SET deck = '%s' WHERE username = '%s';" % json.dumps(new_deck), username)
 
             self.db.commit()
 
@@ -42,7 +42,7 @@ class DeckHandler(auth.AuthObject):
 
         del decks[deck_name]
 
-        cur.execute("UPDATE users SET deck = %s WHERE username = '%s';" % (re.escape(json.dumps(decks)), username))
+        cur.execute("UPDATE users SET deck = %s WHERE username = '%s';" % (json.dumps(decks), username))
 
         self.db.commit()
 

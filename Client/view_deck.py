@@ -71,11 +71,11 @@ if __name__ == '__main__':
         card = Card(list(cards.keys())[i], cards)
         deck.add_card(card)
 
-    screen = display.set_mode((800, 600), RESIZABLE)
+    screen = display.set_mode((800, 600), RESIZABLE | HWSURFACE | DOUBLEBUF)
     running = True
     offset = 0
     while running:
-        screen.fill(0)
+        # screen.fill(0)
         for e in event.get():
             if e.type == QUIT:
                 running = False

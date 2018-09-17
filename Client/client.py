@@ -21,7 +21,7 @@ pygame.font.init()
 # Deck class to allow for deck editing
 class Deck:
     def __init__(self, deckname, deckl):
-        self.deck_list = deckl
+        self.deck_list = [card_database[e] for e in deckl]
         self.dname = deckname
         self.last_surf = None
         self.card_pos = []
@@ -31,6 +31,7 @@ class Deck:
             has_img = card.img
             if card.img is None:
                 threading.Thread(target=card.downloadIm).start()
+                
 
     def draw_deck(self, area, offset, click):
         if self.last_surf:
@@ -54,9 +55,9 @@ class Deck:
         self.card_pos = []
 
         for card in self.deck_list:
-            img = card.img
-            if img is not None:
-                scaled = pygame.transform.smoothscale(img, (120, 190))
+            img = card.img2
+            if img:
+                scaled = card.img2
 
                 height = scaled.get_height()
                 width = scaled.get_width()
@@ -77,21 +78,52 @@ class Deck:
         self.last_surf = None
         self.card_pos = []
 
-    def remove_card(self, card_name):
+    def remove_card(self, card):
         found = False
-        for card in self.deck_list:
-            if card.cname == card_name:
-                found = True
-                break
-        if found:
-            del self.deck_list[card]
+        i=0
+        try:
+            self.deck_list.remove(card)
+            self.last_surf = None
+            self.card_pos = []
+        except:
+            pass
+            
+    def action(self, ac):
+        if ac == "create":
+            for a in range(len(user_item.curDecks) + 1): #Finding smallest deck that is open
+                if not "Deck %i"%(a) in user_item.curDecks:
+                    break
+            new_deck = Deck("Deck %i"%(a), {})
+            menu_specifications["Deck Building"]["Current Deck"] = new_deck
 
-    def save(self, user):
-        user.curDecks[self.dname] = self.deck_list
+            user_item.curDecks[new_deck.dname] = new_deck
+            
+            payload = {'username': user_item.name, 'token': user_item.token, 'deck_name': new_deck.dname, 'deck_data': []}
+            items = requests.post(base_url + "set_deck", data=json.dumps(payload), headers={'content-type': 'application/json'})
+            ret_item = items.json()
+            
+        elif ac == "save":
+            payload = {'username': user_item.name, 'token': user_item.token, 'deck_name': self.dname, 'deck_data': [e.cname for e in self.deck_list]}
+            items = requests.post(base_url + "set_deck", data=json.dumps(payload), headers={'content-type': 'application/json'})
+            ret_item = items.json()
+            
+        elif ac == "delete":
+            payload = {'username': user_item.name, 'token': user_item.token, 'deck_name': self.dname}
+            items = requests.post(base_url + "del_deck", data=json.dumps(payload), headers={'content-type': 'application/json'}) 
+            ret_item = items.json()
+            del user_item.curDecks[self.dname]
 
-    def delete(self):
-        pass
+            if len(user_item.curDecks) > 0:
+                menu_specifications["Deck Building"]["Current Deck"] = list(user_item.curDecks.values())[0]
+            else:
+                menu_specifications["Deck Building"]["Current Deck"] = Deck("Default", [])
+            
+            
+        return ret_item["status"] == 200
 
+            
+            
+        
 
 # User class for keeping track of profile things
 class User:
@@ -101,6 +133,7 @@ class User:
         self.loss = 0
         self.curDecks = {}
         self.token = None
+        
 
     def make_user(self, username, password, req):  # "sign_in" "create_user"
         payloads = {'username': username, 'password': password}
@@ -111,14 +144,12 @@ class User:
             global current_screen
             global menu_specifications
             if req == "create_user":
-                print("Account created")
                 self.make_user(username, password, "sign_in")
             else:
                 self.name = username
                 self.token = ret_item["token"]
                 self.get_data()
                 current_screen = "Deck Building"
-                print("Account log in")
 
             if len(self.curDecks) > 0:
                 menu_specifications["Deck Building"]["Current Deck"] = list(self.curDecks.values())[0]
@@ -142,49 +173,51 @@ class User:
         items = requests.post(base_url + "get_decks", data=json.dumps(payloads),
                               headers={'content-type': 'application/json'})
         ret_item = items.json()
+
         if ret_item["status"] == 200:
-            deck = ret_item["data"]
+            deck =ret_item["data"]
             for deckname in deck:
+
                 self.curDecks[deckname] = Deck(deckname, deck[deckname])
 
 
 class Card:
     def __init__(self, cardname, card_DataB):
         self.cname = cardname
-        if "type" in card_DataB[cardname]:
-            self.type = card_DataB[cardname]["type"]
+        if "type" in card_DataB[self.cname]:
+            self.type = card_DataB[self.cname]["type"]
         if "Creature" in self.type:
-            self.power = card_DataB[cardname]["power"]
-            self.toughness = card_DataB[cardname]["toughness"]
-            self.cmc = card_DataB[cardname]["cmc"]
-        if "colors" in card_DataB[cardname]:
-            self.colors = card_DataB[cardname]["colors"]
-        if "manaCost" in card_DataB[cardname]:
-            self.manaCost = card_DataB[cardname]["manaCost"]
-        if "text" in card_DataB[cardname]:
-            self.text = card_DataB[cardname]["text"]
+            self.power = card_DataB[self.cname]["power"]
+            self.toughness = card_DataB[self.cname]["toughness"]
+            self.cmc = card_DataB[self.cname]["cmc"]
+        if "colors" in card_DataB[self.cname]:
+            self.colors = card_DataB[self.cname]["colors"]
+        if "manaCost" in card_DataB[self.cname]:
+            self.manaCost = card_DataB[self.cname]["manaCost"]
+        if "text" in card_DataB[self.cname]:
+            self.text = card_DataB[self.cname]["text"]
             self.alt = False
-        if card_DataB[cardname]["layout"] == "double-faced":
-            if card_DataB[cardname]["names"][0] == cardname:
-                self.alt = card_DataB[cardname]["names"][1]
+        if card_DataB[self.cname]["layout"] == "double-faced":
+            if card_DataB[self.cname]["names"][0] == self.cname:
+                self.alt = card_DataB[self.cname]["names"][1]
             else:
-                self.alt = card_DataB[cardname]["names"][0]
+                self.alt = card_DataB[self.cname]["names"][0]
         self.img = None
         self.imgUrl = None
-        if "imageUrl" in card_DataB[cardname]:
-            self.imgUrl = card_DataB[cardname]["imageUrl"]
+        self.img2 = None
+        if "imageUrl" in card_DataB[self.cname]:
+            self.imgUrl = card_DataB[self.cname]["imageUrl"]
 
         if "CardImages//" + self.cname + ".jpg" in existingImages:
             self.img = pygame.image.load("Card Name/" + self.cname + ".jpg").convert()
-            print(self.img)
-        card_DataB[cardname]
+        card_DataB[self.cname]
 
     def downloadIm(self):
         if (self.img == None and self.imgUrl):
             image_url = self.imgUrl
             img_data = requests.get(image_url).content
-            self.img = pygame.transform.smoothscale(pygame.image.load(io.BytesIO(img_data)).convert(),
-                                                    [int(e * size_ratio) for e in (90, 120)])
+            self.img = pygame.transform.smoothscale(pygame.image.load(io.BytesIO(img_data)).convert(), [int(e*size_ratio) for e in (90,120)])
+            self.img2 = pygame.transform.smoothscale(pygame.image.load(io.BytesIO(img_data)).convert(), [int(e*size_ratio) for e in (120,190)])
 
     def __hash__(self):
         return hash(self.cname) ^ hash(self.text) ^ hash(self.imgUrl)
@@ -209,13 +242,13 @@ def transparent_rect(x, y, b, h, alpha, colour=(0, 0, 0)):
 
 @functools.lru_cache(maxsize=256)
 def split_lines(text_wanted, x, y, w, h):
-    # Find maximum chars in a line
-    myfont = pygame.font.Font("avenir.otf", int(15 * size_ratio))
-    for char_max in range(0, 50, 2):  # Find the maximum number of characters we can fit on a line
-        if pygame.font.Font.size(myfont, "_" * char_max)[0] > w:
+    #Find maximum chars in a line
+    myfont = pygame.font.Font("avenir.otf", int(15*size_ratio))
+    for char_max in range(0,50,2): #Find the maximum number of characters we can fit on a line
+        if pygame.font.Font.size(myfont, "_"*char_max)[0]>w:
             break
 
-    # Split it into lines
+    #Split it into lines
     lines = []
     words = text_wanted.split()
     current_line = ""
@@ -225,27 +258,27 @@ def split_lines(text_wanted, x, y, w, h):
             current_line = word
         else:
             current_line += " " + word
-
+            
     lines.append(current_line)
-
+    
     return lines
-
 
 def make_paragraph(screen, text_wanted, x, y, w, h, line_start):
     lines = split_lines(text_wanted, x, y, w, h)
-    line_start = min(len(lines) - 1, line_start)
-
-    myfont = pygame.font.Font("avenir.otf", int(15 * size_ratio))
-    # Figure out y dist between them
+    line_start = min(len(lines)-1, line_start)
+    
+    myfont = pygame.font.Font("avenir.otf", int(15*size_ratio))
+    #Figure out y dist between them
     largest_y = -1
-    for line in lines[line_start:min(len(lines), line_start + 8)]:
-        largest_y = max(largest_y, pygame.font.Font.size(myfont, line)[1])
+    for line in lines[line_start:min(len(lines), line_start+8)]:
+        largest_y = max(largest_y,pygame.font.Font.size(myfont,line)[1])
 
-    for a in range(8):  # Make up to 8 lines
-        if largest_y * a > h or line_start + a >= len(lines):  # Will go too far down
+    for a in range(8): #Make up to 8 lines
+        if largest_y*a > h or line_start+a>=len(lines): #Will go too far down
             break
-        text_with_outline(lines[a + line_start], myfont, (255, 255, 255), (0, 0, 0), x, y + a * largest_y, 1, False)
-
+        text_with_outline(lines[a+line_start], myfont, (255,255,255), (0,0,0), x, y+a*largest_y, 1, False)
+    
+    
 
 def text_with_outline(text, myfont, col_main, col_outline, x, y, outline_width, scale_needed):
     main_text = myfont.render(text, True, col_main)  # The main colour text
@@ -259,7 +292,7 @@ def text_with_outline(text, myfont, col_main, col_outline, x, y, outline_width, 
     #     stuff[a][1] += extra[a][1]
     # for outlinePos in stuff[:-1]:
     #     screen.blit(outline_text, outlinePos)
-    screen.blit(main_text, (x, y))
+    screen.blit(main_text, (x,y))
 
 
 def drawCard(cardname):
@@ -270,13 +303,11 @@ def drawCard(cardname):
             threading.Thread(target=curCard.downloadIm).start()
             image = curCard.img
 
-        # In case it was no longer selected
-        if menu_specifications["Deck Building"]["Reading Card"] != curCard:
-            return
+        #In case it was no longer selected
         screen.blit(behind_card, (int(850 * size_ratio), int(150 * size_ratio)))
         transparent_rect(int(850 * size_ratio), int(150 * size_ratio), int(150 * size_ratio),
-                         int(303 * size_ratio), 90)
-
+                                       int(303 * size_ratio), 90)
+        
         if image:
             screen.blit(image, (int(883 * size_ratio), int(200 * size_ratio)))
 
@@ -294,14 +325,66 @@ def drawCard(cardname):
                                             int(30 * size_ratio), 30)
             text_with_outline("Tough: " + curCard.toughness, myfont, (255, 255, 255), (0, 0, 0), 858 * size_ratio,
                               340 * size_ratio + (50 * size_ratio - y) / 2, 1, False)
-            make_paragraph(screen, curCard.text, int(858 * size_ratio), int(382 * size_ratio), int(135 * size_ratio),
-                           int(55 * size_ratio), sc_params["Read Scroll"])
+            make_paragraph(screen, curCard.text, int(858 * size_ratio), int(382 * size_ratio), int(135*size_ratio), int(55*size_ratio), sc_params["Read Scroll"])
         else:
-            make_paragraph(screen, curCard.text, int(858 * size_ratio), int(330 * size_ratio), int(135 * size_ratio),
-                           int(100 * size_ratio), sc_params["Read Scroll"])
+            make_paragraph(screen, curCard.text, int(858 * size_ratio), int(330 * size_ratio), int(135*size_ratio), int(100*size_ratio), sc_params["Read Scroll"])
     except Exception as e:
-        print(e)
         pass
+scrollMenuOpen = False
+def makeDropMenu(mx,my,click,xPos,yPos,userObj, scrollIndex):
+    global scrollMenuOpen,menu_specifications
+    image = images_database["buttonScrollAlt"]
+    dropButton = pygame.Rect(xPos*size_ratio,yPos*size_ratio,50*size_ratio,50*size_ratio)
+    if (dropButton.collidepoint(mx,my) and image != images_database["buttonScrollAlt"]):
+        image = images_database["buttonScrollAlt"]
+    if ( not dropButton.collidepoint(mx,my) and image!=images_database["buttonScroll"]):
+        image = images_database["buttonScroll"]
+    #userObj.curDecks.sort()
+    if(click and dropButton.collidepoint(mx,my) and not scrollMenuOpen):
+        scrollMenuOpen = True
+        for i in range(1,7):
+            transparent_rect(350*size_ratio,100*size_ratio,(350)*size_ratio,(25*i*size_ratio),150,(160,160,160))
+            pygame.time.wait(50)
+            pygame.display.flip()
+        
+            
+    if(not(350*size_ratio<=mx<=700*size_ratio and 25*size_ratio<=my<=350*size_ratio)):
+        scrollMenuOpen = False
+
+    if (scrollMenuOpen):
+        Image = pygame.transform.flip(image, False, True)
+        transparent_rect(350*size_ratio,100*size_ratio,(350)*size_ratio,(150*size_ratio),150,(160,160,160))
+        if(len(userObj.curDecks)!=0):
+            #pygame.font.Font
+            
+            for deck in range(scrollIndex,min(scrollIndex+2,len(userObj.curDecks))):
+                deckNameRect = pygame.Rect(350*size_ratio,100*size_ratio+75*size_ratio*(deck-scrollIndex),350*size_ratio,75*size_ratio)
+                if(deckNameRect.collidepoint(mx,my) and click):
+                    menu_specifications["Deck Building"]["Current Deck"].dname = userObj.curDecks[sorted(list(userObj.curDecks.keys()))[deck]].dname
+                fontSize,x,y,myfont=font_size("Times New Roman",userObj.curDecks[sorted(list(userObj.curDecks.keys()))[deck]].dname,350*size_ratio,75*size_ratio,30)
+                text_with_outline(userObj.curDecks[sorted(list(userObj.curDecks.keys()))[deck]].dname,myfont,(255,255,255),(0,0,0),(350*size_ratio+(350*size_ratio-x)/2),(100*size_ratio+75*size_ratio*(deck-scrollIndex)+(75*size_ratio-y)/2),1,False)
+    else:
+        Image = image
+    fontSize,x,y,myfont = font_size("Times New Roman", menu_specifications["Deck Building"]["Current Deck"].dname,310*size_ratio,75*size_ratio,30)
+    text_with_outline(menu_specifications["Deck Building"]["Current Deck"].dname,myfont,(255,255,255),(0,0,0),(350*size_ratio+(310*size_ratio-x)/2),(25*size_ratio+(75*size_ratio-y)/2),1,False)
+    screen.blit(Image,(int(xPos*size_ratio),int(yPos*size_ratio)))
+
+def makeDeckButtons(mx,my, deck):
+    images = ["create","save","delete"]
+    pos = [[850,25],[900,25],[950,25]]
+    buttons = []
+    for i in range(len(images)):
+        buttons.append(screen.blit(images_database[images[i]],(pos[i][0]*size_ratio,pos[i][1]*size_ratio)))
+
+    for rect in range(len(buttons)):
+        if buttons[rect].collidepoint(mx,my):
+            if clicked:
+                deck.action(images[rect])
+            images[rect]+="Alt"
+
+    for i in range(len(images)):
+        buttons.append(screen.blit(images_database[images[i]],(pos[i][0]*size_ratio,pos[i][1]*size_ratio)))
+
 
 
 @functools.lru_cache(maxsize=256)
@@ -313,18 +396,6 @@ def font_size(font, text, max_width, max_height, size):  # Recurssion with memoi
     return font_size(font, text, max_width, max_height, size - 3)
 
 
-def set_deck(username, token, deck_name, deck_data):
-    payload = {'username': username, 'token': token, 'deck_name': deck_name, 'deck_data': deck_data}
-    items = requests.post(base_url + "set_decks", data=json.dumps(payload))
-    ret_item = json.loads(items)
-    return ret_item["status"] == 200
-
-
-def del_deck(username, token, deck_name):
-    payload = {'username': username, 'token': token, 'deck_name': deck_name}
-    items = requests.post(base_url + "del_deck", data=json.dumps(payload))
-    ret_item = json.loads(items)
-    return ret_item["status"] == 200
 
 
 def search_card(key_note):
@@ -359,7 +430,10 @@ else:
     file.close()
 
 for card in card_database:
-    card_database[card] = Card(card, card_database)
+    try:
+        card_database[card] = Card(card, card_database)
+    except:
+        pass
 
 current_screen = "Login Menu"
 current_selection = "Nil"
@@ -373,7 +447,7 @@ bck_direction = 1
 menu_specifications = {"Login Menu": {"Username": "Username", "Password": "Password"},
                        'Main Menu': {},
                        'Deck Building': {"Search": "Search", "Items": [], "Current_Scroll": 0, "Current Deck": None,
-                                         "Read Scroll": 0, "Reading Card": None, "Deckslide": 0}
+                                         "Read Scroll": 0, "Reading Card": None, "Deckslide": 0, "Toggle_D":0}
                        }
 
 # Setting up pygame
@@ -390,7 +464,7 @@ path_way = os.path.dirname(os.path.realpath(__file__))  # Directory to the pytho
 for image in os.listdir(path_way + "/Images"):  # Loading images
     save_path = "Images/" + image
     if image[-3:] == "jpg" or image[-3:] == "png":
-        curImg = pygame.image.load(save_path).convert()
+        curImg = pygame.image.load(save_path)
         sizes = list(map(int, image[image.rfind("_") + 1:image.rfind(".")].split("x")))
         original_images[image[:image.rfind("_")]] = [curImg, sizes[0], sizes[1]]
 
@@ -402,8 +476,6 @@ port = 224
 images_database = {}
 
 behind_card = None
-
-
 def setup():
     global images_database
     for image in original_images:
@@ -414,13 +486,13 @@ def setup():
         except:
             images_database[image] = pygame.transform.scale(im[0], (int(size_ratio * im[1]), int(size_ratio * im[2])))
 
-    surface = pygame.Surface([size_ratio * e for e in original_screen])
-    surface.blit(images_database["DeckBck"], (0, 0))
+    surface = pygame.Surface([size_ratio*e for e in original_screen])
+    surface.blit(images_database["DeckBck"], (0,0))
     sur_im = surface.copy()
 
     global behind_card
-    behind_card = sur_im.subsurface(
-        pygame.Rect(int(850 * size_ratio), int(150 * size_ratio), int(150 * size_ratio), int(303 * size_ratio)))
+    behind_card = sur_im.subsurface(pygame.Rect(int(850 * size_ratio), int(150 * size_ratio), int(150 * size_ratio), int(303 * size_ratio)))
+    
 
 
 setup()
@@ -463,7 +535,6 @@ while running:
             scrolled = -1
 
         elif event.type == pygame.VIDEORESIZE:
-            print('resize')
             x, y = event.w, event.h
             requested_size = [x, y]
             ratio_wanted = original_screen[0] / original_screen[1]
@@ -502,15 +573,14 @@ while running:
     if cur_background == 47 or cur_background == 0:
         bck_direction *= -1
     if current_screen == "Login Menu":
-        str_wanted = abs(47 - (cur // 0.06) % 94)
+        str_wanted = abs(47-(cur//0.06)%94)
         screen.blit(images_database["IntroGif%i" % (str_wanted)], [int(e * size_ratio) for e in [0, 0]])
         for i in range(2):
             im_name, im_pos = ["Sign Up", "Sign In"][i], [[800, 510], [800, 570]][i]
             im_pos = [int(e * size_ratio) for e in im_pos]
             item = screen.blit(images_database[im_name], im_pos)
             if item.collidepoint(mx, my) and clicked:  # They signed up or in!
-                threading._start_new_thread(user_item.make_user, (
-                sc_params["Username"], sc_params["Password"], ["create_user", "sign_in"][i]))
+                threading._start_new_thread(user_item.make_user, (sc_params["Username"], sc_params["Password"], ["create_user", "sign_in"][i]))
 
         # Username and password bars
         buttons = [
@@ -536,15 +606,16 @@ while running:
 
         x_taken = pygame.font.Font.size(myfont, sc_params["Username"])[0]
         text_with_outline(
-            sc_params["Username"] + (current_selection == "Username" and cur_background // 8 % 2 == 0 and '|' or ""),
+            sc_params["Username"] + (current_selection == "Username" and cur%2<1 and '|' or ""),
             myfont, (255, 255, 255), (0, 0, 0), int(500 * size_ratio) - x_taken // 2, int(512 * size_ratio), 1, False)
 
         x_taken = pygame.font.Font.size(myfont, sc_params["Password"])[0]
         text_with_outline(
-            sc_params["Password"] + (current_selection == "Password" and cur_background // 8 % 2 == 0 and '|' or ""),
+            sc_params["Password"] + (current_selection == "Password" and cur%2<1 and '|' or ""),
             myfont, (255, 255, 255), (0, 0, 0), int(500 * size_ratio) - x_taken // 2, int(577 * size_ratio), 1, False)
 
     elif current_screen == "Deck Building":
+        
         screen.blit(images_database["DeckBck"], (0, 0))
         side_bar = transparent_rect(0, 0, int(200 * size_ratio), int(625 * size_ratio), 60)
         search_bar = transparent_rect(0, int(20 * size_ratio), int(200 * size_ratio), int(40 * size_ratio), 100)
@@ -583,7 +654,7 @@ while running:
 
                 if sc_params["Reading Card"] != card_object:
                     sc_params["Read Scroll"] = 0
-
+                    
                 sc_params["Reading Card"] = card_object
                 if clicked:  # Adding cards
                     sc_params["Current Deck"].add_card(card_object)
@@ -605,11 +676,20 @@ while running:
             surf = sc_params["Current Deck"].draw_deck(deck_rect, sc_params["Deckslide"], clicked)
             screen.set_clip(deck_rect)
             screen.blit(surf, (deck_rect[0], deck_rect[1] + sc_params["Deckslide"]))
+            draw_next = None
             for rect_item, card_object in sc_params["Current Deck"].card_pos:
                 if rect_item.collidepoint((mx, my - sc_params["Deckslide"])):
                     pygame.draw.rect(screen, (255, 255, 255),
                                      (rect_item.x, rect_item.y + sc_params["Deckslide"], rect_item.w, rect_item.h), 1)
+                    draw_next = card_object.cname 
+                    if clicked:
+                        sc_params["Current Deck"].remove_card(card_object)
             screen.set_clip(None)
 
+            if draw_next:
+                drawCard(draw_next)
+        sc_params["Toggle_D"] = max(min(scrollMenuOpen and sc_params["Toggle_D"] + scrolled or sc_params["Toggle_D"], len(user_item.curDecks)-2), 0)
+        makeDeckButtons(mx,my, sc_params["Current Deck"])
+        makeDropMenu(mx,my,clicked,628,37,user_item, sc_params["Toggle_D"])
     pygame.display.flip()
 pygame.quit()

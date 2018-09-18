@@ -8,8 +8,8 @@ from flask import request, Response
 
 app = Flask(__name__)
 
-auth_system = auth.AuthObject("s03.jamesxu.ca", "mtg", "mtg123", "mtg")
-deck_system = decks.DeckHandler("s03.jamesxu.ca", "mtg", "mtg123", "mtg")
+auth_system = auth.AuthObject("s03.jamesxu.ca", "mtg", REDACTED, "mtg")
+deck_system = decks.DeckHandler("s03.jamesxu.ca", "mtg", REDACTED, "mtg")
 
 
 def signed_in(username, token=0):
